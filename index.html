@@ -1,395 +1,807 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="h-full bg-slate-950 text-slate-100 selection:bg-blue-500/30 selection:text-blue-200">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Linux Distro Recommender & Assistant</title>
+    <title>Architect Linux Navigations - Recommender & Dual-Boot Planner</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- FontAwesome for Premium Tech Icons -->
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        :root {
-            --bg-dark: #070a13;
-            --card-dark: #0f1526;
-            --primary-glow: rgba(59, 130, 246, 0.15);
-            --secondary-glow: rgba(244, 63, 94, 0.15);
+    
+    <!-- Custom styling & configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon-blue': '0 0 20px rgba(59, 130, 246, 0.2)',
+                        'neon-rose': '0 0 20px rgba(244, 63, 94, 0.2)',
+                    }
+                }
+            }
         }
-
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;900&family=JetBrains+Mono:wght=400;700&display=swap');
+        
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: #f1f5f9;
-            overflow-x: hidden;
         }
-
-        .heading-font {
-            font-family: 'Space Grotesk', sans-serif;
-        }
-
-        /* Glassmorphism Cards */
         .glass-card {
-            background: rgba(15, 21, 38, 0.7);
-            backdrop-filter: blur(12px);
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
-
-        .glass-card-interactive {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .glass-card-hover:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.15);
         }
-
-        .glass-card-interactive:hover {
-            transform: translateY(-4px);
-            border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 12px 40px 0 rgba(59, 130, 246, 0.15);
-        }
-
-        /* Active selection styling */
-        .selected-option {
-            border-color: #3b82f6 !important;
-            background: rgba(59, 130, 246, 0.12) !important;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2) inset;
-        }
-
-        /* Progress Bar Animation */
-        .progress-bar-fill {
-            transition: width 0.4s ease-in-out;
-        }
-
-        /* Scrollbar styling */
+        /* Custom scrollbar for terminals and details panels */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
+            height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #070a13;
+            background: rgba(15, 23, 42, 0.3);
         }
         ::-webkit-scrollbar-thumb {
-            background: #1e293b;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #3b82f6;
-        }
-
-        /* Partition Block Transitions */
-        .partition-block {
-            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between">
+<body class="flex flex-col min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-100">
 
-    <!-- Header -->
-    <header class="border-b border-slate-800/80 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-rose-500 flex items-center justify-center shadow-lg">
-                    <i class="fa-brands fa-linux text-white text-xl"></i>
+    <!-- Navigation Header -->
+    <header class="border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetWizard()">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-rose-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-terminal text-white text-lg"></i>
                 </div>
                 <div>
-                    <span class="heading-font font-bold text-lg tracking-wider bg-gradient-to-r from-blue-400 to-rose-400 bg-clip-text text-transparent">WHICHDISTRO</span>
-                    <p class="text-[10px] text-slate-400 font-semibold tracking-widest uppercase">Linux Navigator</p>
+                    <h1 class="text-md font-black tracking-wider bg-gradient-to-r from-blue-400 via-indigo-200 to-rose-400 bg-clip-text text-transparent uppercase">Architect</h1>
+                    <p class="text-[10px] text-slate-400 font-mono tracking-widest uppercase">Ecosystem Recommender & Planner</p>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
-                <span class="text-xs text-slate-400 bg-slate-800/60 px-3 py-1.5 rounded-full border border-slate-700/50">
-                    <i class="fa-solid fa-microchip text-blue-400 mr-1.5 animate-pulse"></i> Interactive Engine v2.5
+                <span class="text-xs font-mono text-slate-400 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800 flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Engine v3.0 Online
                 </span>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
+    <!-- Main Workspace Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 flex flex-col justify-center">
         
-        <!-- Welcome Screen -->
-        <section id="welcome-screen" class="max-w-3xl mx-auto text-center py-12">
-            <div class="inline-flex items-center space-x-2 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-full text-blue-400 text-xs font-semibold mb-6">
-                <i class="fa-solid fa-compass-drafting"></i>
-                <span>Stop distro hopping today</span>
+        <!-- START RECOMMENDATION WIZARD SCREEN (LANDING) -->
+        <div id="landing-screen" class="max-w-4xl mx-auto text-center space-y-12 py-8 animate-fade-in">
+            <div class="space-y-4">
+                <div class="inline-flex items-center space-x-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-3 py-1 text-xs text-blue-400 mb-4 font-mono font-semibold uppercase">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Decision-Matrix Driven Calculations</span>
+                </div>
+                <h2 class="text-4xl md:text-6xl font-black tracking-tight text-white leading-tight">
+                    Find Your Perfect <br>
+                    <span class="bg-gradient-to-r from-blue-400 via-indigo-300 to-rose-400 bg-clip-text text-transparent">Linux Environment</span>
+                </h2>
+                <p class="text-slate-400 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
+                    An interactive ecosystem engine that maps your hardware variables, graphics pipelines, preferred system base, experience constraints, and partitioning models directly to an optimized distribution, window environment, and bootstrap script.
+                </p>
             </div>
-            <h1 class="heading-font text-4xl md:text-6xl font-black mb-6 tracking-tight leading-tight">
-                Find Your Perfect <br>
-                <span class="bg-gradient-to-r from-blue-400 via-indigo-400 to-rose-400 bg-clip-text text-transparent">Linux Configuration</span>
-            </h1>
-            <p class="text-slate-400 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
-                Answer 5 highly targeted questions about your hardware architecture, professional workflows, desktop desires, and gaming requirements. Receive an instantly analyzed recommendation with dynamic performance profiles, dual-boot partition builders, and terminal blueprints.
-            </p>
-            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-                <button onclick="startWizard()" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold px-8 py-4 rounded-2xl shadow-lg transition duration-200 flex items-center justify-center space-x-3 transform active:scale-95">
-                    <span>Start Recommendation Wizard</span>
-                    <i class="fa-solid fa-arrow-right"></i>
+
+            <!-- Dashboard Telemetry Simulator Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto text-left">
+                <div class="glass-card p-5 rounded-2xl border border-slate-800/80 space-y-2">
+                    <div class="flex items-center gap-2 text-blue-400 text-xs font-mono uppercase font-bold">
+                        <i class="fa-solid fa-microchip"></i>
+                        <span>Hardware Sensor</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-100">Dynamic GPU Profiling</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Profiles single and dual graphics architectures to configure dynamic driver-level multiplexer hooks.</p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl border border-slate-800/80 space-y-2">
+                    <div class="flex items-center gap-2 text-rose-400 text-xs font-mono uppercase font-bold">
+                        <i class="fa-solid fa-hard-drive"></i>
+                        <span>Partition Engine</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-100">Dual-Boot Mapping</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Calculates real-time, fluid partition parameters matching Windows structures without file data loss.</p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl border border-slate-800/80 space-y-2">
+                    <div class="flex items-center gap-2 text-purple-400 text-xs font-mono uppercase font-bold">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>AI Copilot Gateway</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-100">Contextual Helpdesk</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Seeds system variables dynamically into Gemini AI instances to troubleshoot installation steps.</p>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button onclick="startWizard()" class="group relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-slate-100 rounded-2xl bg-gradient-to-br from-blue-600 to-rose-600 group-hover:from-blue-600 group-hover:to-rose-600 hover:text-white focus:ring-4 focus:outline-none focus:ring-blue-800 transition">
+                    <span class="relative px-8 py-4 transition-all ease-in duration-75 bg-slate-950 rounded-[14px] group-hover:bg-opacity-0 font-bold tracking-wider text-xs uppercase flex items-center gap-3">
+                        <span>Initialize System Wizard</span>
+                        <i class="fa-solid fa-bolt text-rose-400 animate-pulse group-hover:text-white transition"></i>
+                    </span>
                 </button>
             </div>
-        </section>
+        </div>
 
-        <!-- Dynamic Recommendation Wizard Container -->
-        <section id="wizard-screen" class="hidden max-w-4xl mx-auto w-full glass-card rounded-3xl p-6 md:p-10 relative overflow-hidden">
-            <!-- Progress Tracker -->
-            <div class="mb-10">
-                <div class="flex justify-between items-center mb-3">
-                    <span id="wizard-step-label" class="text-xs uppercase font-bold tracking-wider text-blue-400">Step 1 of 5</span>
-                    <span id="wizard-step-title" class="text-sm font-semibold text-slate-300">Hardware Platform Selection</span>
-                </div>
-                <div class="w-full bg-slate-800/80 h-2 rounded-full overflow-hidden">
-                    <div id="progress-bar" class="progress-bar-fill h-full bg-gradient-to-r from-blue-500 to-indigo-500" style="width: 20%;"></div>
-                </div>
+        <!-- THE INTERACTIVE WIZARD CARD (HIDDEN ON START) -->
+        <div id="wizard-card" class="hidden glass-card rounded-3xl p-6 md:p-8 max-w-4xl w-full mx-auto relative overflow-hidden shadow-2xl transition-all duration-300">
+            <!-- Progress Bar -->
+            <div class="absolute top-0 left-0 right-0 h-1.5 bg-slate-800/80">
+                <div id="progress-bar-fill" class="h-full bg-gradient-to-r from-blue-500 to-rose-500 w-1/5 transition-all duration-500"></div>
             </div>
 
-            <!-- Dynamic Question Form Content -->
-            <div id="question-container" class="min-h-[280px] flex flex-col justify-between">
-                <!-- Injected via JavaScript -->
+            <!-- Step Numbers Header -->
+            <div class="flex justify-between items-center mb-8 pt-2">
+                <span id="step-indicator" class="text-xs font-mono font-bold uppercase text-slate-400 tracking-wider">Step 1 of 5: Platform Mapping</span>
+                <span class="text-xs font-mono text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">WIZARD</span>
             </div>
 
-            <!-- Wizard Navigation Buttons -->
-            <div class="flex items-center justify-between border-t border-slate-800/80 pt-6 mt-8">
-                <button id="prev-btn" onclick="prevStep()" class="hidden text-sm font-semibold text-slate-400 hover:text-white flex items-center space-x-2 transition">
-                    <i class="fa-solid fa-angle-left"></i>
-                    <span>Back</span>
-                </button>
-                <span class="flex-grow"></span>
-                <button id="next-btn" onclick="nextStep()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-6 py-3 rounded-xl transition duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                    <span>Continue</span>
-                    <i class="fa-solid fa-angle-right"></i>
-                </button>
-            </div>
-        </section>
-
-        <!-- Results Dashboard -->
-        <section id="results-screen" class="hidden w-full space-y-8 animate-fade-in">
-            <!-- Hero Results Card -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 glass-card rounded-3xl p-8 md:p-10 border-l-4 border-l-blue-500 relative overflow-hidden">
-                    <!-- Background Accent Glow -->
-                    <div class="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl -z-10"></div>
-                    
-                    <div class="flex items-start justify-between mb-6">
-                        <div>
-                            <span class="text-xs font-bold uppercase text-blue-400 tracking-widest px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20">The Perfect Match</span>
-                            <h2 id="recommended-distro" class="heading-font text-4xl md:text-6xl font-black mt-4 tracking-tight">EndeavourOS</h2>
-                            <p id="recommended-de" class="text-lg md:text-xl text-slate-300 font-medium mt-2">GNOME Desktop Environment (Wayland)</p>
-                        </div>
-                        <div id="distro-icon-wrapper" class="w-20 h-20 bg-slate-800/80 rounded-2xl flex items-center justify-center border border-slate-700 text-slate-200 text-4xl shadow-xl">
-                            <i class="fa-brands fa-linux"></i>
-                        </div>
-                    </div>
-
-                    <p id="recommendation-desc" class="text-slate-300 leading-relaxed text-base md:text-lg mb-8">
-                        Based on your profile, we highly recommend EndeavourOS with GNOME...
-                    </p>
-
-                    <!-- Feature Tags -->
-                    <div class="flex flex-wrap gap-2.5 mb-8" id="match-badges">
-                        <!-- Instantiated via JS -->
-                    </div>
-
-                    <!-- Quick Configuration Profile Summary -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80">
-                        <div>
-                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Package Base</span>
-                            <span id="spec-base" class="text-sm font-semibold text-slate-200">Arch Linux</span>
-                        </div>
-                        <div>
-                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Target GPU Driver</span>
-                            <span id="spec-gpu" class="text-sm font-semibold text-slate-200">NVIDIA Proprietary</span>
-                        </div>
-                        <div>
-                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Display Server</span>
-                            <span id="spec-display" class="text-sm font-semibold text-slate-200">Wayland (Native)</span>
-                        </div>
-                        <div>
-                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Power Manager</span>
-                            <span id="spec-power" class="text-sm font-semibold text-slate-200">TLP + tlp-pd</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SIDE BAR: Key Performance Metrics -->
-                <div class="glass-card rounded-3xl p-8 flex flex-col justify-between">
+            <form id="wizard-form" onsubmit="event.preventDefault();">
+                <!-- STEP 1: Hardware Mapping -->
+                <div id="step-1" class="wizard-step space-y-6">
                     <div>
-                        <h3 class="heading-font text-xl font-bold mb-4 flex items-center">
-                            <span class="w-2 h-6 bg-rose-500 mr-3 rounded-full"></span> Resource & Latency Profile
+                        <h3 class="text-lg md:text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-microchip text-blue-400"></i>
+                            Select your physical hardware configuration
                         </h3>
-                        <p class="text-xs text-slate-400 mb-6">Visual comparison of memory usage & platform update freshness metrics.</p>
-                        
-                        <div class="chart-container relative h-[200px] w-full">
-                            <canvas id="resourceProfileChart"></canvas>
+                        <p class="text-xs text-slate-400">Different architectures demand custom kernel parameters and graphics pipeline modules.</p>
+                    </div>
+
+                    <!-- Options Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Desktop Option -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="hardware_type" value="desktop" class="sr-only peer" checked onclick="toggleDualGPUDropdowns(false)">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-4">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-solid fa-desktop text-2xl text-slate-400 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-200 text-sm">Desktop PC</h4>
+                                    <p class="text-[11px] text-slate-400 mt-1">High compatibility, customizable peripherals, and dedicated PCI buses.</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Standard Laptop Option -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="hardware_type" value="laptop" class="sr-only peer" onclick="toggleDualGPUDropdowns(false)">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-4">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-solid fa-laptop text-2xl text-slate-400 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-200 text-sm">Standard Laptop</h4>
+                                    <p class="text-[11px] text-slate-400 mt-1">Single integrated/discrete GPU layout. Prioritizes battery scaling.</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Dual-GPU Laptop Option -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="hardware_type" value="dual_gpu_laptop" class="sr-only peer" onclick="toggleDualGPUDropdowns(true)">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-4">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-solid fa-laptop-code text-2xl text-slate-400 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-200 text-sm">Dual-GPU Laptop</h4>
+                                    <p class="text-[11px] text-slate-400 mt-1">Hybrid architecture requiring driver-level multiplexer hooks.</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- DYNAMIC DUAL-GPU SELECTORS -->
+                    <div id="dual-gpu-dropdowns" class="hidden p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 animate-fade-in">
+                        <div class="flex items-center space-x-2 text-rose-400 text-xs font-mono uppercase tracking-wider mb-2">
+                            <i class="fa-solid fa-layer-group"></i>
+                            <span>Hybrid Graphics Sub-System Profiling</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5">Integrated GPU (Primary Display)</label>
+                                <select id="integrated-gpu" class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                                    <option value="intel">Intel® UHD / Iris Xe / Arc Integrated</option>
+                                    <option value="amd">AMD Radeon™ Vega / RDNA Integrated</option>
+                                    <option value="other">Other / Basic VGA Display</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5">Discrete GPU (High Performance)</label>
+                                <select id="discrete-gpu" class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                                    <option value="nvidia">NVIDIA GeForce® RTX / GTX (Proprietary Drivers)</option>
+                                    <option value="amd_dedicated">AMD Radeon™ RX Dedicated (Mesa / Open-source)</option>
+                                    <option value="intel_dedicated">Intel® Arc™ Dedicated (Xe-driver Stack)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mt-6 space-y-4 pt-4 border-t border-slate-800">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-slate-400 font-medium">Estimated Idle RAM:</span>
-                            <span id="stat-ram" class="font-bold text-rose-400">~850 MB</span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-slate-400 font-medium">Laptop Power Footprint:</span>
-                            <span id="stat-power" class="font-bold text-emerald-400">&lt; 8.0W Idle</span>
-                        </div>
+                    <!-- Normal GPU selection fallbacks (For Standard Desktop/Laptop) -->
+                    <div id="normal-gpu-selection" class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-300">GPU Driver Stack Target</label>
+                        <select id="single-gpu-type" class="w-full bg-slate-900/60 border border-slate-800 text-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition">
+                            <option value="nvidia">NVIDIA GeForce / RTX (Closed Source Stack)</option>
+                            <option value="amd">AMD Radeon (Native Open-Source Mesa kernel drivers)</option>
+                            <option value="intel">Intel Integrated / Arc Graphics (Natively compatible)</option>
+                        </select>
                     </div>
+                </div>
+
+                <!-- STEP 2: Base Preference -->
+                <div id="step-2" class="wizard-step hidden space-y-6">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-server text-blue-400"></i>
+                            Select your preferred Linux distribution foundation
+                        </h3>
+                        <p class="text-xs text-slate-400">Your choice maps your target package ecosystem, release schedule type, and core philosophy.</p>
+                    </div>
+
+                    <!-- 4 Columns Side-by-Side Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        
+                        <!-- Ubuntu Base Option -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="base_preference" value="ubuntu" class="sr-only peer">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-5">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-brands fa-ubuntu text-2xl text-orange-500 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-slate-200 text-sm">Ubuntu Base</h4>
+                                    <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">Debian-derived stability with vast corporate support and massive software libraries.</p>
+                                </div>
+                                <div class="pt-2 border-t border-slate-800/60">
+                                    <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">Package Manager</span>
+                                    <span class="text-xs font-mono font-bold text-orange-400">apt</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Fedora Base Option -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="base_preference" value="fedora" class="sr-only peer">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-5">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-brands fa-fedora text-2xl text-blue-400 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-slate-200 text-sm">Fedora Base</h4>
+                                    <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">Bleeding-edge security and Red Hat components. Highly modern & stable defaults.</p>
+                                </div>
+                                <div class="pt-2 border-t border-slate-800/60">
+                                    <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">Package Manager</span>
+                                    <span class="text-xs font-mono font-bold text-blue-400">dnf</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Arch Base Option -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="base_preference" value="arch" class="sr-only peer">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-5">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-solid fa-ghost text-2xl text-cyan-400 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-slate-200 text-sm">Arch Base</h4>
+                                    <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">Rolling release model with absolute user customizability and access to the AUR.</p>
+                                </div>
+                                <div class="pt-2 border-t border-slate-800/60">
+                                    <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">Package Manager</span>
+                                    <span class="text-xs font-mono font-bold text-cyan-400">pacman</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- I Don't Know Option -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="base_preference" value="dont_know" class="sr-only peer" checked>
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-5">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-solid fa-circle-question text-2xl text-purple-400 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-slate-200 text-sm">I Don't Know</h4>
+                                    <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">Let the engine dynamically evaluate and choose the best base matching your workflows.</p>
+                                </div>
+                                <div class="pt-2 border-t border-slate-800/60">
+                                    <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">Package Manager</span>
+                                    <span class="text-xs font-mono font-bold text-purple-400">Auto-Detected</span>
+                                </div>
+                            </div>
+                        </label>
+
+                    </div>
+                </div>
+
+                <!-- STEP 3: Use-Case Targeting -->
+                <div id="step-3" class="wizard-step hidden space-y-6">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-gamepad text-blue-400"></i>
+                            Select your primary usage environment
+                        </h3>
+                        <p class="text-xs text-slate-400">Your choice decides kernel configuration parameters, runtime libraries, and compiler flag sets.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Gaming Focus -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="use_case" value="gaming" class="sr-only peer" checked>
+                            <div class="p-4 rounded-xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex items-center gap-4">
+                                <div class="h-10 w-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                                    <i class="fa-solid fa-gamepad text-lg transition"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-slate-200">Gaming & High Performance</h4>
+                                    <p class="text-[10px] text-slate-400 font-normal">Optimized schedulers, Wine/Proton staging layers, and game mode daemons.</p>
+                                </div>
+                                <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                    <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                </span>
+                            </div>
+                        </label>
+
+                        <!-- Software Engineering -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="use_case" value="development" class="sr-only peer">
+                            <div class="p-4 rounded-xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex items-center gap-4">
+                                <div class="h-10 w-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                                    <i class="fa-solid fa-code text-lg transition"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-slate-200">Software Development & Work</h4>
+                                    <p class="text-[10px] text-slate-400 font-normal">Stable containerization support, sandboxing environments, and toolchain caches.</p>
+                                </div>
+                                <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                    <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                </span>
+                            </div>
+                        </label>
+
+                        <!-- Daily Work -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="use_case" value="daily" class="sr-only peer">
+                            <div class="p-4 rounded-xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex items-center gap-4">
+                                <div class="h-10 w-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                    <i class="fa-solid fa-laptop-house text-lg transition"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-slate-200">Daily Driving & Productivity</h4>
+                                    <p class="text-[10px] text-slate-400 font-normal">High runtime stability, long battery states, media rendering engines, and office suites.</p>
+                                </div>
+                                <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                    <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                </span>
+                            </div>
+                        </label>
+
+                        <!-- Creators -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="use_case" value="production" class="sr-only peer">
+                            <div class="p-4 rounded-xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex items-center gap-4">
+                                <div class="h-10 w-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                                    <i class="fa-solid fa-photo-film text-lg transition"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-slate-200">Audio/Video Production</h4>
+                                    <p class="text-[10px] text-slate-400 font-normal">Real-time Audio processing (Pipewire/Jack Integration), CUDA engines, and OpenCL layers.</p>
+                                </div>
+                                <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                    <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Expertise Calibration -->
+                <div id="step-4" class="wizard-step hidden space-y-6">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-graduation-cap text-blue-400"></i>
+                            Calibrate for your terminal comfort level
+                        </h3>
+                        <p class="text-xs text-slate-400">Decides whether the installer handles manual system parameters or utilizes structured GUI-assisted wizards.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Beginner -->
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="experience" value="beginner" class="sr-only peer" checked>
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                        <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition mr-1">
+                                            <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                        </span>
+                                        GUI Focused (Complete Beginner)
+                                    </h4>
+                                    <span class="text-[10px] font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20 uppercase">Safe Mode</span>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed">I prefer graphical software centers, integrated installer partitions, dynamic driver packaging, and zero manual terminal configurations.</p>
+                            </div>
+                        </label>
+
+                        <!-- Intermediate -->
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="experience" value="intermediate" class="sr-only peer">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                        <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition mr-1">
+                                            <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                        </span>
+                                        Hybrid User (Comfortable with CLI)
+                                    </h4>
+                                    <span class="text-[10px] font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded border border-blue-400/20 uppercase">Standard</span>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed">Comfortable copy-pasting bash routines, installing helper dependencies (like the AUR), executing package managers, and managing driver scripts.</p>
+                            </div>
+                        </label>
+
+                        <!-- Purist -->
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="experience" value="advanced" class="sr-only peer">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                        <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition mr-1">
+                                            <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                        </span>
+                                        Linux Purist (Manual Architecture Assembly)
+                                    </h4>
+                                    <span class="text-[10px] font-mono text-rose-400 bg-rose-400/10 px-2 py-0.5 rounded border border-rose-400/20 uppercase">Architect Mode</span>
+                                </div>
+                                <p class="text-xs text-slate-400 leading-relaxed">I desire manual disk tables, chroot installations, building bootloaders from scratch, customized kernel configuration flags, and building system layers manually.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- STEP 5: Bloat Calibration -->
+                <div id="step-5" class="wizard-step hidden space-y-6">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-gauge-high text-blue-400"></i>
+                            Select your system footprint philosophy
+                        </h3>
+                        <p class="text-xs text-slate-400">Sets the weight profile for packages, UI animations, background monitoring daemons, and pre-loaded software packages.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Heavy / Loaded -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="bloat_level" value="heavy" class="sr-only peer">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-4">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-solid fa-cubes text-2xl text-slate-400 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-200 text-sm">Out-of-the-Box</h4>
+                                    <p class="text-[10px] text-slate-400 mt-1">Pre-configured with office tools, gaming libraries, standard codecs, and graphics tools.</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Standard Lean -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="bloat_level" value="lean" class="sr-only peer" checked>
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-4">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-solid fa-feather text-2xl text-slate-400 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-200 text-sm">Lean & Clean</h4>
+                                    <p class="text-[10px] text-slate-400 mt-1">Sleek, streamlined user interface with no duplicate software. Hand-select packages yourself.</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Pure CLI / Window Manager -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="bloat_level" value="minimal" class="sr-only peer">
+                            <div class="p-5 rounded-2xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 peer-checked:border-blue-500 peer-checked:bg-blue-950/20 peer-checked:[&_i]:text-blue-400 peer-checked:[&_.dot-outer]:border-blue-500 peer-checked:[&_.dot-inner]:bg-blue-500 transition duration-200 flex flex-col h-full justify-between gap-4">
+                                <div class="flex justify-between items-start">
+                                    <i class="fa-solid fa-circle-nodes text-2xl text-slate-400 transition"></i>
+                                    <span class="dot-outer h-4 w-4 rounded-full border border-slate-700 flex items-center justify-center transition">
+                                        <span class="dot-inner h-1.5 w-1.5 bg-transparent rounded-full transition"></span>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-200 text-sm">Barebone Purist</h4>
+                                    <p class="text-[10px] text-slate-400 mt-1">Raw terminal target or keyboard-optimized lightweight window managers. Extreme performance.</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Wizard Navigation Buttons -->
+                <div class="mt-8 pt-6 border-t border-slate-800/80 flex justify-between items-center">
+                    <button type="button" id="prev-btn" class="hidden px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold rounded-xl text-xs border border-slate-800 transition flex items-center gap-2" onclick="navigateStep(-1)">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Previous Step</span>
+                    </button>
+                    <!-- Spacer if back button is hidden -->
+                    <div id="spacer-div" class="flex-grow"></div>
+                    
+                    <button type="button" id="next-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs shadow-lg shadow-blue-500/10 transition flex items-center gap-2" onclick="navigateStep(1)">
+                        <span>Continue</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                    <button type="button" id="calculate-btn" class="hidden px-6 py-2.5 bg-gradient-to-r from-blue-600 to-rose-600 hover:from-blue-500 hover:to-rose-500 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-rose-500/20 transition flex items-center gap-2" onclick="calculateRecommendation()">
+                        <span>Compile Blueprint</span>
+                        <i class="fa-solid fa-microchip"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- RESULTS PANEL (HIDDEN BY DEFAULT until calculation runs) -->
+        <div id="results-panel" class="hidden space-y-8 animate-fade-in w-full">
+            
+            <!-- Target Summary Hero -->
+            <div class="glass-card rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative border-l-4 border-l-blue-500">
+                <div class="space-y-3 text-center md:text-left">
+                    <span class="text-[10px] font-mono uppercase bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20">Optimal Match Found</span>
+                    <h3 class="text-2xl md:text-4xl font-black text-white" id="target-distro-name">CachyOS Linux</h3>
+                    <p class="text-xs text-slate-400 md:max-w-xl leading-relaxed" id="target-distro-desc">An advanced, highly optimized Arch derivative compiled with compiler-level architectures to leverage high-performance CPU architectures and modern kernel engines.</p>
+                </div>
+                <div class="flex flex-col items-center justify-center bg-slate-900/60 p-5 rounded-2xl border border-slate-800 min-w-[200px]">
+                    <span class="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-1">Desktop Interface</span>
+                    <span class="text-lg font-black text-rose-400" id="target-de-name">GNOME Wayland</span>
+                    <span class="text-[9px] text-slate-500 mt-2 text-center uppercase" id="target-de-badge">Minimal gesture optimization</span>
                 </div>
             </div>
 
-            <!-- Blueprints, Dual Boot & AI Assistant Split Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Dashboard Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
-                <!-- Dynamic Helper Card with Tab switching layout -->
-                <div class="glass-card rounded-3xl p-8 flex flex-col justify-between min-h-[550px]">
-                    <div>
-                        <!-- Tabs Header -->
-                        <div class="flex border-b border-slate-800/80 mb-6">
-                            <button id="tab-btn-blueprint" onclick="switchResultTab('blueprint')" class="pb-3 text-sm font-bold border-b-2 border-blue-500 text-white flex items-center space-x-2 transition mr-6">
-                                <i class="fa-solid fa-terminal text-blue-400"></i>
-                                <span>Optimization Blueprint</span>
-                            </button>
-                            <button id="tab-btn-dualboot" onclick="switchResultTab('dualboot')" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-white flex items-center space-x-2 transition">
-                                <i class="fa-solid fa-hard-drive text-rose-400"></i>
-                                <span>Dual-Boot & Partition Planner</span>
-                            </button>
-                        </div>
+                <!-- COLUMN LEFT: Interactive Partitioning & setup details (7 Cols) -->
+                <div class="lg:col-span-7 space-y-6">
+                    
+                    <!-- Tab Selector -->
+                    <div class="flex border-b border-slate-800">
+                        <button onclick="switchTab('blueprint')" id="tab-btn-blueprint" class="px-5 py-3 border-b-2 border-blue-500 font-bold text-xs text-white uppercase tracking-wider flex items-center gap-2 transition">
+                            <i class="fa-solid fa-receipt"></i>
+                            <span>Setup Blueprint</span>
+                        </button>
+                        <button onclick="switchTab('dualboot')" id="tab-btn-dualboot" class="px-5 py-3 border-b-2 border-transparent font-bold text-xs text-slate-400 hover:text-slate-200 uppercase tracking-wider flex items-center gap-2 transition">
+                            <i class="fa-solid fa-hard-drive"></i>
+                            <span>Dual-Boot & Partitioning</span>
+                        </button>
+                    </div>
 
-                        <!-- TAB CONTENT 1: Post-Install Optimization Blueprint -->
-                        <div id="tab-content-blueprint" class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <p class="text-xs text-slate-400">Run these commands immediately after installing to configure hybrid graphics and power saving.</p>
-                                <button onclick="copyTerminalCode()" class="text-xs text-slate-400 hover:text-white px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 transition flex items-center space-x-1">
-                                    <i class="fa-regular fa-copy"></i> <span>Copy Code</span>
+                    <!-- TAB 1: INSTALL BLUEPRINT & CODES -->
+                    <div id="tab-content-blueprint" class="space-y-6">
+                        <!-- Custom script block -->
+                        <div class="glass-card rounded-2xl p-5 md:p-6 space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-terminal text-blue-400"></i>
+                                    1. Run Terminal Setup Script
+                                </span>
+                                <button onclick="copyCode('terminal-script')" class="text-slate-400 hover:text-white transition text-[11px] flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copy Block</span>
                                 </button>
                             </div>
-                            
-                            <div class="relative bg-slate-950 p-5 rounded-2xl border border-slate-800 font-mono text-xs text-slate-300 leading-relaxed overflow-x-auto whitespace-pre">
-<span class="text-slate-500"># 1. Update system & refresh package databases</span>
-<span class="text-blue-400">sudo</span> pacman -Syu
-
-<span class="text-slate-500"># 2. Configure power management profiles</span>
-<span class="text-blue-400">sudo</span> pacman -S tlp tlp-rd
-<span class="text-blue-400">sudo</span> systemctl enable --now tlp
-
-<span class="text-slate-500"># 3. Apply recommended GPU management tooling</span>
-<span id="terminal-gpu-command">yay -S envycontrol-git
-sudo envycontrol -s hybrid</span>
-
-<span class="text-slate-500"># 4. Power & suspend driver synchronization hooks</span>
-<span class="text-blue-400">sudo</span> systemctl enable nvidia-suspend.service nvidia-resume.service
-                            </div>
-                            
-                            <div class="bg-slate-900/30 p-4 rounded-xl border border-slate-800/80 flex items-start space-x-3 mt-4">
-                                <i class="fa-solid fa-circle-info text-amber-400 mt-1"></i>
-                                <p class="text-xs text-slate-400">This configures core system services to prevent flickering or graphical freezing upon resuming from suspend sleep cycles.</p>
+                            <!-- Live updating terminal box -->
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-900 font-mono text-xs overflow-x-auto text-emerald-400 relative">
+                                <pre id="terminal-script" class="whitespace-pre">sudo pacman -Syu
+git clone https://aur.archlinux.org/yay-bin.git
+cd yay-bin && makepkg -si</pre>
                             </div>
                         </div>
 
-                        <!-- TAB CONTENT 2: Interactive Dual Boot and Partition Planner -->
-                        <div id="tab-content-dualboot" class="hidden space-y-6">
+                        <!-- Interactive DE Chart representation -->
+                        <div class="glass-card rounded-2xl p-5 md:p-6 space-y-4">
+                            <h4 class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-pie text-rose-400"></i>
+                                System Resource Profile Breakdown
+                            </h4>
+                            <p class="text-[11px] text-slate-400">Calculated baseline RAM consumption for the recommended window configuration in idle state.</p>
+                            <div class="w-full relative h-[180px] flex items-center justify-center">
+                                <canvas id="resourceChart" class="max-h-full"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: DUAL-BOOT & PARTITIONING PLANNER -->
+                    <div id="tab-content-dualboot" class="hidden space-y-6 animate-fade-in">
+                        <div class="glass-card rounded-2xl p-5 md:p-6 space-y-6">
                             
-                            <!-- Control settings row -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-800/80">
+                            <div>
+                                <h4 class="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                                    <i class="fa-solid fa-sliders text-blue-400"></i>
+                                    Physical Storage Allocator
+                                </h4>
+                                <p class="text-xs text-slate-400">Move the slider to calculate the optimal split partition table configuration for your UEFI systems.</p>
+                            </div>
+
+                            <!-- Disk Properties controls -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Setup Strategy</label>
-                                    <select id="db-strategy" onchange="updatePartitionPlan()" class="bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 text-xs w-full outline-none focus:ring-1 focus:ring-blue-500">
-                                        <option value="dual_shared">Dual-Boot (Single Shared Drive)</option>
-                                        <option value="dual_separate">Dual-Boot (Two Dedicated Drives)</option>
-                                        <option value="single_linux">Linux Only (Wipe Clean)</option>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Total Disk Capacity</label>
+                                    <select id="total-disk-capacity" onchange="updatePartitionCalculations()" class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition">
+                                        <option value="256">256 GB NVMe SSD</option>
+                                        <option value="512" selected>512 GB NVMe SSD</option>
+                                        <option value="1000">1 TB NVMe SSD</option>
+                                        <option value="2000">2 TB NVMe SSD</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Disk Allocation</label>
-                                    <div class="flex items-center space-x-3">
-                                        <input type="range" id="db-disk-slider" min="128" max="2048" step="128" value="512" oninput="updatePartitionPlan()" class="flex-grow accent-blue-500 cursor-pointer">
-                                        <span id="db-disk-display" class="text-xs font-bold text-blue-400 bg-blue-900/20 px-2 py-1 rounded">512 GB</span>
-                                    </div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Target Strategy Model</label>
+                                    <select id="dual-boot-strategy" onchange="updatePartitionCalculations()" class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition">
+                                        <option value="shared" selected>Shared Dual-Boot (Same SSD)</option>
+                                        <option value="dedicated">Dedicated Separate SSD (No partition sharing)</option>
+                                        <option value="wipe">Linux Only (Wipe and utilize full drive)</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            <!-- Visual Disk bar partition map visualization -->
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Planned Disk Partition Layout</h4>
-                                <div id="partition-visualizer-bar" class="w-full h-10 bg-slate-950 rounded-xl overflow-hidden flex border border-slate-800">
-                                    <!-- Injected dynamically via JS -->
+                            <!-- Interactive Slider -->
+                            <div class="space-y-3" id="slider-allocator-container">
+                                <div class="flex justify-between items-center text-xs font-mono font-bold">
+                                    <span class="text-blue-400">Windows OS: <span id="win-display">256 GB</span></span>
+                                    <span class="text-rose-400">Linux System: <span id="linux-display">256 GB</span></span>
                                 </div>
-                                <!-- Legend Grid -->
-                                <div id="partition-legend" class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-[10px]">
-                                    <!-- Dynamic list legends -->
-                                </div>
-                            </div>
-
-                            <!-- Dynamic terminal CLI partitioning instruction -->
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">UEFI & GRUB Setup Instruction</h4>
-                                <div id="partition-instruction-code" class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed max-h-[140px] overflow-y-auto">
-                                    <!-- Custom Terminal commands generated dynamically via JS -->
+                                <input id="disk-allocation-slider" type="range" min="10" max="90" value="50" oninput="updatePartitionCalculations()" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                                <div class="flex justify-between text-[10px] text-slate-500 uppercase font-mono">
+                                    <span>Allocate More to Win</span>
+                                    <span>Equally Balanced</span>
+                                    <span>Allocate More to Linux</span>
                                 </div>
                             </div>
 
-                            <!-- Pre-flight safety checklists -->
-                            <div class="p-4 bg-rose-500/5 border border-rose-500/20 rounded-xl">
-                                <h4 class="text-xs font-bold text-rose-400 flex items-center mb-2">
-                                    <i class="fa-solid fa-triangle-exclamation mr-2"></i> Crucial Pre-installation Checklist (Windows Host)
-                                </h4>
-                                <div class="space-y-2 text-xs">
-                                    <label class="flex items-start space-x-2 cursor-pointer hover:text-white transition">
-                                        <input type="checkbox" class="rounded border-slate-700 bg-slate-950 text-blue-500 mt-0.5">
-                                        <span>Disable <strong>Windows Fast Startup</strong> (prevents lock on NTFS drives, allowing Linux access).</span>
+                            <!-- Visual Disk Layout Blocks -->
+                            <div class="space-y-2">
+                                <label class="block text-xs font-semibold text-slate-300">Generated EFI Disk Partition Layout Map</label>
+                                <div class="w-full h-12 rounded-xl overflow-hidden flex text-[10px] font-bold font-mono shadow-md border border-slate-900" id="partition-visualizer-bar">
+                                    <!-- Dynamic partition sections populated by JS -->
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] text-slate-400" id="partition-legend">
+                                    <!-- Legend entries filled by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Pre-Flight Safety Checklist -->
+                            <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-3">
+                                <h5 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fa-solid fa-triangle-exclamation text-yellow-500"></i>
+                                    Host Pre-Install System Preparations Checklist
+                                </h5>
+                                <div class="space-y-2.5">
+                                    <label class="flex items-start gap-3 cursor-pointer group">
+                                        <input type="checkbox" class="mt-0.5 rounded border-slate-800 bg-slate-950 text-blue-600 focus:ring-0">
+                                        <span class="text-xs text-slate-300 group-hover:text-white transition">Disable <strong>Fast Startup</strong> in Windows Control Panel (Prevents NTFS drive lockouts)</span>
                                     </label>
-                                    <label class="flex items-start space-x-2 cursor-pointer hover:text-white transition">
-                                        <input type="checkbox" class="rounded border-slate-700 bg-slate-950 text-blue-500 mt-0.5">
-                                        <span>Suspend or Disable <strong>BitLocker Device Encryption</strong> on the target storage.</span>
+                                    <label class="flex items-start gap-3 cursor-pointer group">
+                                        <input type="checkbox" class="mt-0.5 rounded border-slate-800 bg-slate-950 text-blue-600 focus:ring-0">
+                                        <span class="text-xs text-slate-300 group-hover:text-white transition">Turn Off Windows BitLocker / Device Encryption (Prevents installation errors and bricked files)</span>
                                     </label>
-                                    <label class="flex items-start space-x-2 cursor-pointer hover:text-white transition">
-                                        <input type="checkbox" class="rounded border-slate-700 bg-slate-950 text-blue-500 mt-0.5">
-                                        <span>Verify UEFI Boot Mode in BIOS (ensure Legacy/CSM is completely Disabled).</span>
+                                    <label class="flex items-start gap-3 cursor-pointer group">
+                                        <input type="checkbox" class="mt-0.5 rounded border-slate-800 bg-slate-950 text-blue-600 focus:ring-0">
+                                        <span class="text-xs text-slate-300 group-hover:text-white transition">Enable UEFI and select OS Prober (For GRUB boot-menu integration)</span>
                                     </label>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
 
-                <!-- AI Systems Architect Chat Assistant -->
-                <div class="glass-card rounded-3xl p-8 flex flex-col justify-between h-[550px]">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                <!-- COLUMN RIGHT: Embedded AI Systems Architect Chat (5 Cols) -->
+                <div class="lg:col-span-5 glass-card rounded-3xl p-6 flex flex-col h-[580px] border-t border-t-rose-500/20 shadow-neon-rose/5">
+                    
+                    <!-- Chat Header -->
+                    <div class="border-b border-slate-800/80 pb-4 mb-4 flex items-center justify-between">
                         <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-                                <i class="fa-solid fa-brain text-emerald-400 animate-pulse text-xs"></i>
+                            <div class="h-10 w-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                                <i class="fa-solid fa-robot"></i>
                             </div>
                             <div>
-                                <h4 class="font-bold text-sm">Ask our Systems Architect</h4>
-                                <p class="text-[10px] text-slate-500">Ask about packages, drivers, or partition configs</p>
+                                <h4 class="font-extrabold text-xs text-white uppercase tracking-wider">AI Systems Architect</h4>
+                                <p class="text-[9px] font-mono text-slate-400 flex items-center gap-1.5">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                    Dynamic Context Seeding Loaded
+                                </p>
                             </div>
                         </div>
-                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider bg-slate-800 px-2 py-1 rounded">Gemini Powered</span>
+                        <button onclick="toggleKeyInput()" class="text-[10px] text-slate-400 hover:text-white transition flex items-center gap-1 bg-slate-900 border border-slate-800 px-2 py-1 rounded">
+                            <i class="fa-solid fa-key"></i>
+                            <span id="key-label">Set API Key</span>
+                        </button>
                     </div>
 
-                    <!-- Chat conversation timeline -->
-                    <div id="ai-chat-history" class="flex-grow overflow-y-auto space-y-4 pr-2 text-sm text-slate-300">
-                        <div class="bg-slate-900/50 border border-slate-800/80 p-3.5 rounded-2xl max-w-[85%]">
-                            Hello! I am configured with the context of your recommended <strong>Linux Match</strong>. Ask me anything about driver installs, customizing your DE, or dual-boot setups!
+                    <!-- API Key Input Field (Hidden by default) -->
+                    <div id="api-key-container" class="hidden pb-4 border-b border-slate-800 mb-4 animate-fade-in space-y-2">
+                        <div class="flex justify-between items-center text-[10px] text-slate-300">
+                            <span>Enter your Google Gemini API Key:</span>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:underline">Get Key <i class="fa-solid fa-up-right-from-square text-[8px]"></i></a>
+                        </div>
+                        <div class="flex gap-2">
+                            <input id="gemini-key" type="password" placeholder="AIzaSy..." class="flex-grow bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <button onclick="saveApiKey()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 rounded-lg font-bold">Apply</button>
                         </div>
                     </div>
 
-                    <!-- Input Bar -->
+                    <!-- Chat Message Area -->
+                    <div id="chat-messages" class="flex-grow overflow-y-auto space-y-4 pr-1 text-xs">
+                        <div class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 text-slate-300 leading-relaxed">
+                            Hello! I am your <strong>Systems Architect AI</strong>. I've automatically seeded my system profile with your selection details.
+                            <br><br>
+                            How can I help you customize your dual-boot sequence or optimize your driver config today?
+                        </div>
+                    </div>
+
+                    <!-- Chat input bar -->
                     <div class="mt-4 pt-4 border-t border-slate-800/80">
-                        <div class="flex items-center space-x-2 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
-                            <input type="text" id="ai-chat-input" placeholder="e.g., How do I configure GRUB dual-boot with Windows?" class="bg-transparent border-none outline-none focus:ring-0 flex-grow text-sm text-white px-3" onkeydown="handleChatKeyDown(event)">
-                            <button onclick="sendChatMessage()" class="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl transition duration-150 flex items-center justify-center">
-                                <i class="fa-solid fa-paper-plane text-xs"></i>
+                        <form id="chat-input-form" class="flex gap-2" onsubmit="handleChatSubmit(event);">
+                            <input id="chat-input" type="text" placeholder="Ask about driver setups, installation hurdles, or dual-booting..." class="flex-grow bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-extrabold px-4 py-3 rounded-xl transition flex items-center justify-center">
+                                <i class="fa-solid fa-paper-plane"></i>
                             </button>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
 
-            <!-- Start Over button -->
+            <!-- Return button action footer -->
             <div class="text-center pt-8">
-                <button onclick="resetWizard()" class="text-slate-400 hover:text-white transition duration-150 text-sm font-semibold inline-flex items-center space-x-2 bg-slate-900 px-6 py-3 rounded-xl border border-slate-800 hover:border-slate-700">
-                    <i class="fa-solid fa-rotate-left"></i> <span>Re-run Recommendation Wizard</span>
+                <button onclick="resetWizard()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs border border-slate-800 transition">
+                    <i class="fa-solid fa-arrow-rotate-left mr-2"></i>
+                    Recalculate Wizard Target Profiles
                 </button>
             </div>
-        </section>
-
+        </div>
     </main>
 
     <!-- Footer -->
@@ -397,668 +809,962 @@ sudo envycontrol -s hybrid</span>
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <p>&copy; 2026 ARCHITECT Linux Navigations &bull; Interactive Hardware & Distro Recommender Ecosystem</p>
             <div class="flex space-x-4">
-                <a href="#welcome-screen" class="hover:text-blue-400 transition">Engine Policies</a>
-                <a href="#welcome-screen" class="hover:text-blue-400 transition">Systems Schema</a>
+                <button onclick="openModal('policies')" class="hover:text-blue-400 transition cursor-pointer">Engine Policies</button>
+                <button onclick="openModal('schema')" class="hover:text-blue-400 transition cursor-pointer">Systems Schema</button>
             </div>
         </div>
     </footer>
 
+    <!-- Engine Policies Modal -->
+    <div id="modal-policies" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300">
+        <div class="glass-card rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto relative border-t-4 border-t-blue-500">
+            <button onclick="closeModal('policies')" class="absolute top-5 right-5 text-slate-400 hover:text-white transition text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-black mb-6 text-slate-100 flex items-center space-x-2">
+                <i class="fa-solid fa-gavel text-blue-400"></i>
+                <span>Engine Policies & Recommendation Criteria</span>
+            </h3>
+            <div class="space-y-6 text-sm text-slate-300 leading-relaxed">
+                <div>
+                    <h4 class="font-bold text-slate-200 mb-2 uppercase tracking-wider text-xs">1. Algorithmic Neutrality</h4>
+                    <p>Our matching metrics operate purely on telemetry-free logical scoring parameters. We do not accept sponsorships from any distribution development team. Recommendation weights are calculated dynamically in real-time based strictly on performance benchmarks, packages freshness, and configuration stability.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-200 mb-2 uppercase tracking-wider text-xs">2. Privacy & Sandboxing Policy</h4>
+                    <p>All questionnaire evaluation runs and dual-boot partitioning layouts are processed directly within your local client sandboxed storage environment. No metrics, specifications, GPU types, or partition plans are transmitted, stored, or processed on external tracking servers.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-200 mb-2 uppercase tracking-wider text-xs">3. Gemini API Gateway Rules</h4>
+                    <p>The Systems Architect AI chat interface establishes an encrypted, direct-to-destination connection with the Google Gemini API. Your conversation logs are handled client-side and do not undergo intermediate logging. However, users should refrain from supplying root terminal secrets or private SSH credentials during configuration prompts.</p>
+                </div>
+            </div>
+            <div class="mt-8 pt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="closeModal('policies')" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl transition">Acknowledge Policies</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Systems Schema Modal -->
+    <div id="modal-schema" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300">
+        <div class="glass-card rounded-3xl p-6 md:p-8 max-w-4xl w-full max-h-[85vh] overflow-y-auto relative border-t-4 border-t-rose-500">
+            <button onclick="closeModal('schema')" class="absolute top-5 right-5 text-slate-400 hover:text-white transition text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-black mb-4 text-slate-100 flex items-center space-x-2">
+                <i class="fa-solid fa-network-wired text-rose-400"></i>
+                <span>Ecosystem Engine Systems Schema</span>
+            </h3>
+            <p class="text-xs text-slate-400 mb-6">Our system routes user questionnaire profiles through a strict decision-matrix weight algorithm to optimize stability and hardware support.</p>
+            
+            <!-- Schematic Map -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-800">
+                    <span class="text-[10px] text-rose-400 font-bold uppercase tracking-wider block mb-2">Input Layer (Sensors)</span>
+                    <ul class="space-y-2 text-xs text-slate-300">
+                        <li class="flex justify-between"><span>Hardware Type:</span> <span class="font-semibold text-slate-100">Laptop / Desktop</span></li>
+                        <li class="flex justify-between"><span>GPU Pipeline:</span> <span class="font-semibold text-slate-100">NVIDIA / AMD / Intel</span></li>
+                        <li class="flex justify-between"><span>Base Preference:</span> <span class="font-semibold text-slate-100">Arch / Fedora / Ubuntu / Auto</span></li>
+                        <li class="flex justify-between"><span>Experience Level:</span> <span class="font-semibold text-slate-100">Beginner to Advanced</span></li>
+                        <li class="flex justify-between"><span>Core Focus:</span> <span class="font-semibold text-slate-100">Gaming / Work / Daily</span></li>
+                    </ul>
+                </div>
+                <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider block mb-2">Logical Weight Routing</span>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            <strong>Base Matching:</strong> Boosts matching packages structures matching user foundation selects. <br>
+                            <strong>Advanced Streams:</strong> Directs setups into specialized rolling engines, custom compilation stacks, or declarative configurations.
+                        </p>
+                    </div>
+                </div>
+                <div class="p-4 bg-slate-900/60 rounded-2xl border border-slate-800">
+                    <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-2">Ecosystem Distribution Targets</span>
+                    <div class="grid grid-cols-2 gap-1.5 text-[9px] text-slate-300">
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">CachyOS (Gaming)</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">Endeavour (Vanilla)</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">Pop!_OS (Workstation)</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">Linux Mint (Desktop)</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">NixOS (Reproducible)</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">Nobara (Optimized)</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">Fedora (Modern Dev)</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">Ubuntu (Standard LTS)</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">Gentoo (Source Build)</span>
+                        <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800">Arch (Minimalist DIY)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Evaluation Parameters Table -->
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 overflow-x-auto">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Extended Decision Matrix Reference Table</h4>
+                <table class="w-full text-[11px] text-slate-400 text-left">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-200">
+                            <th class="pb-2">User Mindset</th>
+                            <th class="pb-2">Base Select</th>
+                            <th class="pb-2">Primary Purpose</th>
+                            <th class="pb-2">Recommended Base Target</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-900">
+                        <tr>
+                            <td class="py-2">Beginner</td>
+                            <td class="py-2">Ubuntu Base</td>
+                            <td class="py-2">Daily / Productivity</td>
+                            <td class="py-2 font-bold text-slate-200">Ubuntu LTS / Linux Mint (Cinnamon Base)</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2">Beginner / Intermediate</td>
+                            <td class="py-2">Ubuntu Base</td>
+                            <td class="py-2">Workstations</td>
+                            <td class="py-2 font-bold text-slate-200">Pop!_OS (System76 Driver-Integrated)</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2">Intermediate</td>
+                            <td class="py-2">Fedora Base</td>
+                            <td class="py-2">Development & Core Work</td>
+                            <td class="py-2 font-bold text-slate-200">Fedora Workstation (Modern Vanilla GNOME)</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2">Intermediate / Advanced</td>
+                            <td class="py-2">Arch Base</td>
+                            <td class="py-2">Elite Gaming / Audio</td>
+                            <td class="py-2 font-bold text-slate-200">Nobara Project / CachyOS (Fsync-enabled)</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2">Advanced</td>
+                            <td class="py-2">I Don't Know</td>
+                            <td class="py-2">Immutable Dev Deployments</td>
+                            <td class="py-2 font-bold text-slate-200">NixOS (Declarative / configuration.nix)</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2">Advanced Purist</td>
+                            <td class="py-2">I Don't Know</td>
+                            <td class="py-2">Custom Compile Tuning</td>
+                            <td class="py-2 font-bold text-slate-200">Gentoo Linux / Vanilla Arch Linux</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeModal('schema')" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-5 py-2.5 rounded-xl transition">Close System Diagram</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Operations Logic -->
     <script>
-        // Data Models for recommendations and dynamic routing
-        const DISTROS_DB = {
-            endeavour: {
-                name: "EndeavourOS",
-                desc: "An outstanding choice for intermediate-to-advanced users looking for a modern, pure Arch-based desktop interface. It installs vanilla graphics configurations without bloated default frameworks, keeping performance at an absolute maximum.",
-                icon: "fa-brands fa-linux",
-                base: "Arch Linux",
-                features: ["Arch-Based Rolling", "No bloatware", "Outstanding AUR access", "Optimized graphics tools"],
-                ram: 850,
-                power: "8.2W Idle",
-                specBase: "Arch Linux",
-                specGpu: "Proprietary NVIDIA / AMD Switchable",
-                specDisplay: "Wayland (Native Mutter)",
-                specPower: "TLP 1.6 + tlp-pd"
-            },
-            cachy: {
-                name: "CachyOS",
-                desc: "An aggressive, ultra-optimized rolling release base designed explicitly for gaming and core-level speed. Utilizes compiler optimizations (x86-64-v3) and specialized CPU schedulers to extract every drop of power from hardware.",
-                icon: "fa-solid fa-gamepad",
-                base: "Arch Linux (Optimized)",
-                features: ["Compiler Optimized", "Gaming GameMode enabled", "Custom core kernels", "Low-latency scheduling"],
-                ram: 900,
-                power: "8.5W Idle",
-                specBase: "CachyOS Core",
-                specGpu: "Dynamic NVIDIA DKMS Module",
-                specDisplay: "Wayland (Kwin / Mutter)",
-                specPower: "TLP (Performance Governor)"
-            },
-            popos: {
-                name: "Pop!_OS",
-                desc: "Perfect for users wanting a stable, robust daily driving operating system with out-of-the-box support for modern hybrid GPU architectures. Powered by System76, its flatpack integration and tiling management simplify multi-tasking.",
-                icon: "fa-solid fa-rocket",
-                base: "Ubuntu LTS Hybrid",
-                features: ["Out-of-the-box NVIDIA Support", "Auto-Tiling System", "Firmware update integration", "Stable base LTS"],
-                ram: 1100,
-                power: "9.5W Idle",
-                specBase: "Debian/Ubuntu",
-                specGpu: "System76 Switchable Driver",
-                specDisplay: "X11 / Cosmic Preview",
-                specPower: "system76-power Daemon"
-            },
-            mint: {
-                name: "Linux Mint",
-                desc: "The ultimate recommendation for traditional desktop paradigms and solid, absolute stability. Lightweight, straightforward to navigate, and extremely reliable, making it perfect for direct computing tasks.",
-                icon: "fa-solid fa-leaf",
-                base: "Ubuntu / Debian Stable",
-                features: ["Traditional interface", "Ultra stable build paradigm", "Low system requirements", "Huge community help"],
-                ram: 700,
-                power: "6.8W Idle",
-                specBase: "Debian/Ubuntu",
-                specGpu: "Driver Manager (NVIDIA 550+)",
-                specDisplay: "X11 (Cinnamon Classic)",
-                specPower: "UPower Integrated"
-            },
-            arch: {
-                name: "Vanilla Arch Linux",
-                desc: "The pure DIY path. Choose this if you want complete, granular control over every configuration file, package, system service, and compilation tool in your environment. Absolute freedom, zero bloat.",
-                icon: "fa-solid fa-gears",
-                base: "Pure Arch Linux",
-                features: ["Total control", "Absolute Zero Bloat", "Raw rolling release packages", "Vast custom architectures"],
-                ram: 500,
-                power: "6.5W Idle",
-                specBase: "Arch Linux Core",
-                specGpu: "Manual Kernel Driver config",
-                specDisplay: "Custom Selection",
-                specPower: "Manual systemctl power config"
-            }
-        };
-
-        // Complete step questionnaire layout
-        const STEPS_DATA = [
-            {
-                title: "Hardware Platform Selection",
-                question: "What hardware layout are you deploying this Linux installation on?",
-                key: "hardware",
-                options: [
-                    { value: "dual_gpu_laptop", label: "Dual GPU Laptop", desc: "Hybrid graphics setup requiring custom power profiles and display server orchestration.", icon: "fa-solid fa-laptop" },
-                    { value: "laptop_amd_intel", label: "Intel/AMD Only Laptop", desc: "Excellent overall compatibility, focus on maximize system battery life.", icon: "fa-solid fa-laptop-medical" },
-                    { value: "desktop", label: "Traditional Desktop PC", desc: "No complex power states or suspend configurations needed.", icon: "fa-solid fa-desktop" }
-                ]
-            },
-            {
-                title: "Primary Graphics Architecture",
-                question: "Which graphics processor drives your display outputs?",
-                key: "gpu",
-                options: [
-                    { value: "nvidia", label: "NVIDIA Dedicated GPU", desc: "Requires proprietary DKMS drivers, suspend hooks, and prime synchronization.", icon: "fa-brands fa-nvidiabrand" },
-                    { value: "amd", label: "AMD Radeon GPU", desc: "Native open-source drivers integrated directly into the Linux kernel (Mesa).", icon: "fa-solid fa-microchip" },
-                    { value: "intel", label: "Intel Integrated Graphics", desc: "Native kernel driver support, low power consumption, reliable stability.", icon: "fa-solid fa-brain" }
-                ]
-            },
-            {
-                title: "Workflow & Primary Purpose",
-                question: "What is the primary role of this operating system configuration?",
-                key: "purpose",
-                options: [
-                    { value: "gaming", label: "Gaming & Performance Focus", desc: "Optimizations for Steam, Proton, Wine, low-latency, and high refresh displays.", icon: "fa-solid fa-gamepad" },
-                    { value: "work", label: "Development & Systems Work", desc: "Docker, compilers, text editors, Git development stacks, and terminal power.", icon: "fa-solid fa-code" },
-                    { value: "daily", label: "General Daily Driving & Web", desc: "Media viewing, browser stacks, communications, stability, and sleek aesthetics.", icon: "fa-solid fa-globe" }
-                ]
-            },
-            {
-                title: "Mindset & Technical Experience",
-                question: "What is your comfort level with Linux terminal commands?",
-                key: "mindset",
-                options: [
-                    { value: "beginner", label: "Beginner: Keep it Simple", desc: "Prefer Graphical interfaces, automatic configuration, and out-of-the-box setups.", icon: "fa-solid fa-user-shield" },
-                    { value: "intermediate", label: "Intermediate: Willing to Configure", desc: "Comfortable with pacman/apt commands, making basic edits to config files.", icon: "fa-solid fa-user-gear" },
-                    { value: "advanced", label: "Advanced: Give Me Full DIY", desc: "Complete architectural control, manual partitioning, manual driver configurations.", icon: "fa-solid fa-user-ninja" }
-                ]
-            },
-            {
-                title: "Desktop Philosophy & Bloat",
-                question: "What kind of visual paradigm and desktop framework do you prefer?",
-                key: "de",
-                options: [
-                    { value: "gnome", label: "Modern & Fluid (GNOME Style)", desc: "Outstanding touchpad gesture capabilities, clean visual design, no layout clutter.", icon: "fa-brands fa-linux" },
-                    { value: "kde", label: "Powerful Customization (KDE Plasma Style)", desc: "Incredible settings depth, Windows-like paradigm, high modern hardware sync.", icon: "fa-solid fa-sliders" },
-                    { value: "light", label: "Ultra Lightweight (XFCE Style)", desc: "Minimalist resources, absolute baseline performance footprint, raw execution speed.", icon: "fa-solid fa-feather" }
-                ]
-            }
-        ];
-
-        let currentStepIndex = 0;
+        let currentStepIndex = 1;
         let selectedAnswers = {};
         let resourceChartInstance = null;
         let activeTab = 'blueprint';
+        let customRecommendations = null;
 
-        // Start wizard execution
+        // Start wizard from landing page
         function startWizard() {
-            document.getElementById('welcome-screen').classList.add('hidden');
-            document.getElementById('wizard-screen').classList.remove('hidden');
-            renderStep();
+            document.getElementById('landing-screen').classList.add('hidden');
+            document.getElementById('wizard-card').classList.remove('hidden');
+            // Reset wizard states
+            currentStepIndex = 1;
+            document.getElementById('progress-bar-fill').style.width = '20%';
+            document.getElementById('step-indicator').innerText = 'Step 1 of 5: Platform Mapping';
         }
 
-        // Render current step in wizard
-        function renderStep() {
-            const stepData = STEPS_DATA[currentStepIndex];
-            
-            // Progress indicators
-            document.getElementById('wizard-step-label').innerText = `Step ${currentStepIndex + 1} of ${STEPS_DATA.length}`;
-            document.getElementById('wizard-step-title').innerText = stepData.title;
-            const progressPct = ((currentStepIndex + 1) / STEPS_DATA.length) * 100;
-            document.getElementById('progress-bar').style.width = `${progressPct}%`;
+        // Modal triggers
+        function openModal(id) {
+            const modal = document.getElementById(`modal-${id}`);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+            }
+        }
 
-            // Back button visibility
-            if (currentStepIndex > 0) {
-                document.getElementById('prev-btn').classList.remove('hidden');
+        // Close Modal handler
+        function closeModal(id) {
+            const modal = document.getElementById(`modal-${id}`);
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Close when user triggers click events surrounding target boundaries
+        window.addEventListener('click', function(event) {
+            const polModal = document.getElementById('modal-policies');
+            const schModal = document.getElementById('modal-schema');
+            if (event.target === polModal) closeModal('policies');
+            if (event.target === schModal) closeModal('schema');
+        });
+
+        // Toggle dGPU configs
+        function toggleDualGPUDropdowns(show) {
+            const dropdownContainer = document.getElementById('dual-gpu-dropdowns');
+            const normalContainer = document.getElementById('normal-gpu-selection');
+            if (show) {
+                dropdownContainer.classList.remove('hidden');
+                normalContainer.classList.add('hidden');
             } else {
-                document.getElementById('prev-btn').classList.add('hidden');
+                dropdownContainer.classList.add('hidden');
+                normalContainer.classList.remove('hidden');
             }
+        }
 
-            // Determine if an option was previously selected
-            const previousSelection = selectedAnswers[stepData.key];
+        // NAVIGATION CONTROL MODULE FOR MULTI-STEP WIZARD (5 STEPS NOW)
+        function navigateStep(direction) {
+            // Validate and hide current step
+            const currentStepEl = document.getElementById(`step-${currentStepIndex}`);
             
-            // Setup continuous select button checking
-            let isContinueDisabled = !previousSelection;
-            if (stepData.key === 'hardware' && previousSelection === 'dual_gpu_laptop') {
-                isContinueDisabled = !selectedAnswers.integratedGpu || !selectedAnswers.discreteGpu;
-            }
-
-            const nextButton = document.getElementById('next-btn');
-            nextButton.disabled = isContinueDisabled;
-            nextButton.querySelector('span').innerText = (currentStepIndex === STEPS_DATA.length - 1) ? "Generate Recommendation" : "Continue";
-
-            // Render options grid
-            let optionsHtml = `
-                <h3 class="heading-font text-xl md:text-2xl font-bold mb-6 text-slate-100">${stepData.question}</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            `;
-
-            stepData.options.forEach(opt => {
-                const isSelected = previousSelection === opt.value;
-                optionsHtml += `
-                    <div onclick="selectOption('${stepData.key}', '${opt.value}')" class="glass-card glass-card-interactive rounded-2xl p-6 cursor-pointer flex flex-col justify-between h-56 transition-all ${isSelected ? 'selected-option' : ''}">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-2xl text-blue-400"><i class="${opt.icon}"></i></span>
-                            ${isSelected ? '<span class="w-6 h-6 rounded-full bg-blue-500/20 border border-blue-500 text-blue-400 flex items-center justify-center text-xs"><i class="fa-solid fa-check"></i></span>' : ''}
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-sm text-slate-100 leading-tight mb-2">${opt.label}</h4>
-                            <p class="text-xs text-slate-400 leading-normal">${opt.desc}</p>
-                        </div>
-                    </div>
-                `;
-            });
-
-            optionsHtml += `</div>`;
-
-            // Append Dual GPU Dropdown selectors if Selected
-            if (stepData.key === 'hardware' && previousSelection === 'dual_gpu_laptop') {
-                optionsHtml += `
-                    <div class="mt-8 p-6 bg-slate-900/40 border border-slate-800/80 rounded-2xl animate-fade-in">
-                        <h4 class="text-sm font-bold text-slate-300 mb-4 flex items-center">
-                            <i class="fa-solid fa-sliders text-blue-400 mr-2"></i> Configure Hybrid Architecture
-                        </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Integrated GPU (Low-Power Core)</label>
-                                <select onchange="selectGpu('integrated', this.value)" class="bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm">
-                                    <option value="">-- Choose iGPU --</option>
-                                    <option value="intel_igpu" ${selectedAnswers.integratedGpu === 'intel_igpu' ? 'selected' : ''}>Intel UHD / Iris Xe / Arc iGPU</option>
-                                    <option value="amd_igpu" ${selectedAnswers.integratedGpu === 'amd_igpu' ? 'selected' : ''}>AMD Radeon Vega / RDNA iGPU</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Discrete GPU (High-Performance Core)</label>
-                                <select onchange="selectGpu('discrete', this.value)" class="bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm">
-                                    <option value="">-- Choose dGPU --</option>
-                                    <option value="nvidia" ${selectedAnswers.discreteGpu === 'nvidia' ? 'selected' : ''}>NVIDIA GeForce RTX / GTX Series</option>
-                                    <option value="amd" ${selectedAnswers.discreteGpu === 'amd' ? 'selected' : ''}>AMD Radeon RX Series dGPU</option>
-                                    <option value="intel" ${selectedAnswers.discreteGpu === 'intel' ? 'selected' : ''}>Intel Arc dGPU Series</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            document.getElementById('question-container').innerHTML = optionsHtml;
-        }
-
-        // Selection Handler
-        function selectOption(key, value) {
-            selectedAnswers[key] = value;
-            if (key === 'hardware' && value !== 'dual_gpu_laptop') {
-                delete selectedAnswers.integratedGpu;
-                delete selectedAnswers.discreteGpu;
-            }
-            renderStep();
-        }
-
-        // Custom GPU Dropdown Handler
-        function selectGpu(type, value) {
-            if (type === 'integrated') {
-                selectedAnswers.integratedGpu = value;
-            } else if (type === 'discrete') {
-                selectedAnswers.discreteGpu = value;
-                // Automatically set Step 2 Graphic processor answer to keep layout synchronized
-                selectedAnswers.gpu = value;
-            }
-            renderStep();
-        }
-
-        // Navigation Controllers
-        function nextStep() {
-            if (currentStepIndex < STEPS_DATA.length - 1) {
+            if (direction === 1 && currentStepIndex < 5) {
+                currentStepEl.classList.add('hidden');
                 currentStepIndex++;
-                renderStep();
-            } else {
-                generateRecommendation();
-            }
-        }
-
-        function prevStep() {
-            if (currentStepIndex > 0) {
+            } else if (direction === -1 && currentStepIndex > 1) {
+                currentStepEl.classList.add('hidden');
                 currentStepIndex--;
-                renderStep();
-            }
-        }
-
-        // Switch between optimization blueprint & dual boot helper tabs
-        function switchResultTab(tabName) {
-            activeTab = tabName;
-            const btnBlueprint = document.getElementById('tab-btn-blueprint');
-            const btnDualboot = document.getElementById('tab-btn-dualboot');
-            const contentBlueprint = document.getElementById('tab-content-blueprint');
-            const contentDualboot = document.getElementById('tab-content-dualboot');
-
-            if (tabName === 'blueprint') {
-                btnBlueprint.classList.add('border-blue-500', 'text-white');
-                btnBlueprint.classList.remove('border-transparent', 'text-slate-400');
-                btnDualboot.classList.add('border-transparent', 'text-slate-400');
-                btnDualboot.classList.remove('border-rose-500', 'text-white');
-
-                contentBlueprint.classList.remove('hidden');
-                contentDualboot.classList.add('hidden');
-            } else {
-                btnDualboot.classList.add('border-rose-500', 'text-white');
-                btnDualboot.classList.remove('border-transparent', 'text-slate-400');
-                btnBlueprint.classList.add('border-transparent', 'text-slate-400');
-                btnBlueprint.classList.remove('border-blue-500', 'text-white');
-
-                contentDualboot.classList.remove('hidden');
-                contentBlueprint.classList.add('hidden');
-                updatePartitionPlan();
-            }
-        }
-
-        // Dynamic Partition Calculation & Visualizer Renderer
-        function updatePartitionPlan() {
-            const strategy = document.getElementById('db-strategy').value;
-            const totalDiskSize = parseInt(document.getElementById('db-disk-slider').value);
-            document.getElementById('db-disk-display').innerText = `${totalDiskSize} GB`;
-
-            const barContainer = document.getElementById('partition-visualizer-bar');
-            const legendContainer = document.getElementById('partition-legend');
-            const codeContainer = document.getElementById('partition-instruction-code');
-
-            let partitions = [];
-            let bootloaderCLI = "";
-
-            if (strategy === 'dual_shared') {
-                // Shared disk setup calculations
-                const winSize = Math.round(totalDiskSize * 0.55);
-                const espSize = 1; // 1GB ESP is recommended for dual booting safely
-                const rootSize = Math.round(totalDiskSize * 0.40) - 8; // Leave room for swap
-                const swapSize = 8;
-
-                partitions = [
-                    { name: 'Windows NTFS', size: winSize, color: 'bg-blue-600/60', desc: 'Existing Windows Host Operating System OS' },
-                    { name: 'EFI ESP', size: espSize, color: 'bg-emerald-500/60', desc: 'System Boot EFI Partition (ESP / boot)' },
-                    { name: 'Linux Root', size: rootSize, color: 'bg-rose-500/60', desc: 'System root container mount (ext4 / btrfs)' },
-                    { name: 'Swap Area', size: swapSize, color: 'bg-indigo-500/60', desc: 'Linux Virtual Memory Space (Hibernation Ready)' }
-                ];
-
-                bootloaderCLI = `
-<span class="text-slate-500"># 1. Mount ESP and Linux target partitions securely</span>
-mount /dev/sdX3 /mnt
-mkdir -p /mnt/boot/efi
-mount /dev/sdX2 /mnt/boot/efi
-
-<span class="text-slate-500"># 2. Configure GRUB to probe for OS on alternative sectors</span>
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
-<span class="text-blue-400">echo</span> "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
-grub-mkconfig -o /boot/grub/grub.cfg
-                `.trim();
-
-            } else if (strategy === 'dual_separate') {
-                // Two physical disks setup calculation
-                const linuxDiskSize = totalDiskSize; 
-                const espSize = 1;
-                const rootSize = linuxDiskSize - 9;
-                const swapSize = 8;
-
-                partitions = [
-                    { name: 'EFI Boot', size: espSize, color: 'bg-emerald-500/60', desc: 'Dedicated Linux Bootloader mount' },
-                    { name: 'Linux OS System', size: rootSize, color: 'bg-rose-500/60', desc: 'Linux system storage folder (ext4/btrfs)' },
-                    { name: 'Swap Sector', size: swapSize, color: 'bg-indigo-500/60', desc: 'Virtual system state hibernation memory' }
-                ];
-
-                bootloaderCLI = `
-<span class="text-slate-500"># Completely isolated installation strategy (Super Safe!)</span>
-<span class="text-slate-500"># EFI and Bootloader partitions reside independently on Disk B.</span>
-mount /dev/sdb2 /mnt
-mkdir -p /mnt/boot
-mount /dev/sdb1 /mnt/boot
-
-<span class="text-slate-500"># Install separate standalone boot management</span>
-bootctl install --path=/boot
-<span class="text-slate-500"># Ensure BIOS priority places Disk B ahead of Disk A.</span>
-                `.trim();
-
-            } else {
-                // Wipe clean layout calculation
-                const espSize = 1;
-                const rootSize = totalDiskSize - 9;
-                const swapSize = 8;
-
-                partitions = [
-                    { name: 'EFI System (ESP)', size: espSize, color: 'bg-emerald-500/60', desc: 'Universal EFI system sector' },
-                    { name: 'Pure Linux (/)', size: rootSize, color: 'bg-rose-500/60', desc: 'Consolidated operating partition space' },
-                    { name: 'Swap Partition', size: swapSize, color: 'bg-indigo-500/60', desc: 'Performance caching swaps' }
-                ];
-
-                bootloaderCLI = `
-<span class="text-slate-500"># Automated clean layout installation setup</span>
-<span class="text-slate-500"># Create partition table gpt manually</span>
-gdisk /dev/sda
-<span class="text-slate-500"># Format target mount system filesystems</span>
-mkfs.fat -F32 /dev/sda1
-mkfs.ext4 /dev/sda2
-mkswap /dev/sda3
-swapon /dev/sda3
-                `.trim();
             }
 
-            // Build dynamic visualization bar
-            let barHtml = "";
-            let legendHtml = "";
-            partitions.forEach(p => {
-                const percentage = (p.size / totalDiskSize) * 100;
-                barHtml += `
-                    <div class="${p.color} h-full partition-block border-r border-slate-900/40 cursor-help flex items-center justify-center text-[10px] font-bold text-white uppercase tracking-wider" style="width: ${percentage}%" title="${p.name} (${p.size} GB) - ${p.desc}">
-                        ${percentage > 12 ? `${p.size}G` : ''}
-                    </div>
-                `;
+            // Reveal new step
+            const nextStepEl = document.getElementById(`step-${currentStepIndex}`);
+            nextStepEl.classList.remove('hidden');
 
-                legendHtml += `
-                    <div class="flex items-center space-x-2">
-                        <span class="w-2.5 h-2.5 rounded ${p.color} inline-block"></span>
-                        <span class="text-slate-300 font-semibold">${p.name} <span class="text-slate-500">(${p.size} GB)</span></span>
-                    </div>
-                `;
-            });
-
-            barContainer.innerHTML = barHtml;
-            legendContainer.innerHTML = legendHtml;
-            codeContainer.innerHTML = bootloaderCLI;
-        }
-
-        // Main Recommendation Logic Engine
-        function generateRecommendation() {
-            document.getElementById('wizard-screen').classList.add('hidden');
-            document.getElementById('results-screen').classList.remove('hidden');
-
-            let winner = "endeavour"; // default fall-back
-            let recommendedDE = "GNOME Shell (Wayland)";
+            // Update Progress Bar (5 Steps scale)
+            const percent = (currentStepIndex / 5) * 100;
+            document.getElementById('progress-bar-fill').style.width = `${percent}%`;
             
-            const { hardware, gpu, purpose, mindset, de } = selectedAnswers;
+            // Step Indicators Array
+            const indicators = [
+                "Platform Mapping",
+                "Base Preference",
+                "Workflow Environment",
+                "Expertise Calibration",
+                "Footprint Configuration"
+            ];
+            document.getElementById('step-indicator').innerText = `Step ${currentStepIndex} of 5: ${indicators[currentStepIndex-1]}`;
 
-            // Decision Routing matrix
-            if (mindset === 'beginner') {
-                if (gpu === 'nvidia') {
-                    winner = "popos";
-                    recommendedDE = de === 'kde' ? "KDE Plasma (System76 Engine)" : "Cosmic Shell / GNOME hybrid";
-                } else {
-                    winner = "mint";
-                    recommendedDE = de === 'kde' ? "KDE Plasma (Traditional Mode)" : "Cinnamon Desktop Interface";
-                }
-            } else if (mindset === 'advanced') {
-                if (de === 'light') {
-                    winner = "arch";
-                    recommendedDE = "Minimal Window Manager (i3 / Hyprland)";
-                } else {
-                    winner = "cachy";
-                    recommendedDE = de === 'kde' ? "Optimized KDE Plasma (High-Hz Gaming)" : "Highly Optimized GNOME Wayland";
-                }
+            // Button visibility adjustments
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const calcBtn = document.getElementById('calculate-btn');
+            const spacer = document.getElementById('spacer-div');
+
+            if (currentStepIndex === 1) {
+                prevBtn.classList.add('hidden');
+                spacer.classList.remove('hidden');
             } else {
-                // Intermediate Matchings
-                if (purpose === 'gaming') {
-                    winner = "cachy";
-                    recommendedDE = de === 'kde' ? "KDE Plasma (Low Latency Custom)" : "GNOME Mutter Wayland Engine";
-                } else {
-                    winner = "endeavour";
-                    recommendedDE = de === 'kde' ? "KDE Plasma Workstation" : "Minimal Stock GNOME (Wayland)";
+                prevBtn.classList.remove('hidden');
+                spacer.classList.add('hidden');
+            }
+
+            if (currentStepIndex === 5) {
+                nextBtn.classList.add('hidden');
+                calcBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                calcBtn.classList.add('hidden');
+            }
+        }
+
+        // DYNAMIC DECISION EVALUATOR SCORING MATRIX
+        function calculateRecommendation() {
+            // Extract Questionnaire Data
+            const form = document.getElementById('wizard-form');
+            const fd = new FormData(form);
+
+            const hardwareType = fd.get('hardware_type');
+            const basePreference = fd.get('base_preference');
+            const useCase = fd.get('use_case');
+            const experience = fd.get('experience');
+            const bloatLevel = fd.get('bloat_level');
+
+            // Handle GPU selections based on Hardware selection
+            let gpuType = 'intel';
+            let discreteGpu = 'none';
+            if (hardwareType === 'dual_gpu_laptop') {
+                gpuType = document.getElementById('integrated-gpu').value;
+                discreteGpu = document.getElementById('discrete-gpu').value;
+            } else {
+                gpuType = document.getElementById('single-gpu-type').value;
+            }
+
+            // Distro metrics profile scores
+            let scores = {
+                cachy: 0,
+                endeavour: 0,
+                arch: 0,
+                mint: 0,
+                pop: 0,
+                nix: 0,
+                nobara: 0,
+                ubuntu: 0,
+                fedora: 0,
+                gentoo: 0
+            };
+
+            // BASE PREFERENCE SCORES (Massive lock-in booster)
+            if (basePreference === 'ubuntu') {
+                scores.ubuntu += 100;
+                scores.pop += 80;
+                scores.mint += 80;
+                // De-prioritize non-matching systems
+                scores.fedora -= 50;
+                scores.nobara -= 50;
+                scores.arch -= 50;
+                scores.endeavour -= 50;
+                scores.cachy -= 50;
+            } else if (basePreference === 'fedora') {
+                scores.fedora += 100;
+                scores.nobara += 100;
+                // De-prioritize non-matching systems
+                scores.ubuntu -= 50;
+                scores.pop -= 50;
+                scores.mint -= 50;
+                scores.arch -= 50;
+                scores.endeavour -= 50;
+                scores.cachy -= 50;
+            } else if (basePreference === 'arch') {
+                scores.arch += 100;
+                scores.endeavour += 100;
+                scores.cachy += 100;
+                // De-prioritize non-matching systems
+                scores.ubuntu -= 50;
+                scores.pop -= 50;
+                scores.mint -= 50;
+                scores.fedora -= 50;
+                scores.nobara -= 50;
+            }
+
+            // Comfort & Experience evaluation weights
+            if (experience === 'beginner') {
+                scores.mint += 40;
+                scores.ubuntu += 45;
+                scores.pop += 35;
+                scores.fedora += 15;
+            } else if (experience === 'intermediate') {
+                scores.fedora += 40;
+                scores.nobara += 35;
+                scores.endeavour += 30;
+                scores.pop += 20;
+                scores.mint += 10;
+                scores.ubuntu += 10;
+            } else if (experience === 'advanced') {
+                scores.arch += 45;
+                scores.nix += 45;
+                scores.gentoo += 40;
+                scores.cachy += 35;
+                scores.endeavour += 15;
+            }
+
+            // Target profiles adjustments by hardware/GPU variables
+            if (hardwareType === 'dual_gpu_laptop' || discreteGpu === 'nvidia' || gpuType === 'nvidia') {
+                scores.pop += 25;      // Native integrated driver installer sets
+                scores.nobara += 25;   // Precompiled hardware repositories
+                scores.ubuntu += 20;   // ubuntu-drivers utility
+                scores.cachy += 15;    // EnvyControl standard setups
+                scores.endeavour += 10;
+            }
+
+            // Use Cases optimization paths
+            if (useCase === 'gaming') {
+                scores.nobara += 45;   // Heavy out-of-the-box system optimizations
+                scores.cachy += 40;    // Kernel schedulers
+                scores.pop += 20;
+                scores.endeavour += 15;
+            } else if (useCase === 'development') {
+                scores.nix += 35;      // Reproducible dev environments
+                scores.fedora += 35;   // Bulletproof toolchains
+                scores.ubuntu += 15;
+                scores.arch += 15;
+            } else if (useCase === 'production') {
+                scores.pop += 20;      // Pipewire stability
+                scores.ubuntu += 15;
+                scores.fedora += 15;
+            } else if (useCase === 'daily') {
+                scores.mint += 30;
+                scores.ubuntu += 25;
+                scores.fedora += 20;
+            }
+
+            // Bloat mindset calibration
+            if (bloatLevel === 'heavy') {
+                scores.ubuntu += 25;
+                scores.mint += 20;
+                scores.pop += 15;
+            } else if (bloatLevel === 'lean') {
+                scores.fedora += 25;
+                scores.nobara += 20;
+                scores.endeavour += 20;
+                scores.cachy += 15;
+            } else if (bloatLevel === 'minimal') {
+                scores.gentoo += 45;   // Compile-time exclusions
+                scores.arch += 35;
+                scores.nix += 30;
+            }
+
+            // Find Maximum Scoring distribution Target
+            let winner = 'endeavour';
+            let maxScore = -9999;
+            for (let d in scores) {
+                if (scores[d] > maxScore) {
+                    maxScore = scores[d];
+                    winner = d;
                 }
             }
 
-            const data = DISTROS_DB[winner];
+            // Determine optimal Desktop Environment (DE) matching
+            let recommendedDE = 'GNOME Wayland';
+            let deDesc = 'Minimal, hardware accelerated, native gesture support.';
+            let rawRAMValues = [600, 450, 200]; // Base components chart initialization
 
-            // Render Hero Stats
-            document.getElementById('recommended-distro').innerText = data.name;
-            document.getElementById('recommended-de').innerText = recommendedDE;
-            document.getElementById('recommendation-desc').innerText = data.desc;
-            document.getElementById('distro-icon-wrapper').innerHTML = `<i class="${data.icon}"></i>`;
-
-            // Spec Matrix
-            document.getElementById('spec-base').innerText = data.specBase;
-            document.getElementById('spec-gpu').innerText = gpu === 'nvidia' ? "NVIDIA Proprietary" : "Mesa Kernel Drivers";
-            document.getElementById('spec-display').innerText = de === 'kde' ? "Wayland / X11 Config" : "Wayland (Native System)";
-            document.getElementById('spec-power').innerText = hardware.includes('laptop') ? "TLP Battery Daemon" : "Standard AC power management";
-
-            // Numeric Stats
-            document.getElementById('stat-ram').innerText = `~${data.ram} MB`;
-            document.getElementById('stat-power').innerText = hardware.includes('laptop') ? (gpu === 'nvidia' ? "< 8.5W Idle" : "< 6.8W Idle") : "No power profile restrictions";
-
-            // Render Dynamic Badges
-            let badgeHtml = "";
-            data.features.forEach(feat => {
-                badgeHtml += `
-                    <span class="text-xs font-semibold text-slate-300 bg-slate-800 border border-slate-700/60 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                        <span>${feat}</span>
-                    </span>
-                `;
-            });
-            document.getElementById('match-badges').innerHTML = badgeHtml;
-
-            // Render Terminal Blueprint custom paths
-            const gpuInstallCmd = document.getElementById('terminal-gpu-command');
-            if (gpu === 'nvidia') {
-                if (winner === 'popos' || winner === 'mint') {
-                    gpuInstallCmd.innerText = `# NVIDIA drivers come pre-installed. Verify dynamic GPU toggles:\nsystem76-power graphics hybrid`;
-                } else {
-                    gpuInstallCmd.innerText = `# Install optimized hybrid graphic helpers\nyay -S envycontrol-git\nsudo envycontrol -s hybrid`;
-                }
+            if (bloatLevel === 'minimal') {
+                recommendedDE = 'Hyprland (Window Manager)';
+                deDesc = 'Ultra-lightweight dynamic tiling window manager leveraging modern Wayland protocols.';
+                rawRAMValues = [150, 250, 100];
+            } else if (bloatLevel === 'heavy') {
+                recommendedDE = 'KDE Plasma (Feature-Rich)';
+                deDesc = 'Elegant, dynamic, fully featured, and highly customizable display settings.';
+                rawRAMValues = [900, 400, 300];
             } else {
-                gpuInstallCmd.innerText = `# AMD / Intel open source drivers integrated.\n# Install Mesa packages for Vulkan acceleration\nsudo pacman -S vulkan-radeon mesa`;
+                // If Daily/Gaming, GNOME offers best modern touch and Optimus driver stability
+                if (useCase === 'gaming' && experience !== 'beginner') {
+                    recommendedDE = 'KDE Plasma (Gaming Optimized)';
+                    deDesc = 'High refresh-rate VRR support, HDR integrations, and direct gamescope pipeline.';
+                    rawRAMValues = [800, 350, 250];
+                } else {
+                    recommendedDE = 'GNOME Wayland';
+                    deDesc = 'Responsive layout, buttery smooth touchpad workspace gestures.';
+                    rawRAMValues = [750, 400, 200];
+                }
             }
+
+            // Generate metadata package
+            const profileData = getDistroProfile(winner, recommendedDE, gpuType, discreteGpu, hardwareType);
+            
+            // Apply Profile Data to UI
+            document.getElementById('target-distro-name').innerText = profileData.name;
+            document.getElementById('target-distro-desc').innerText = profileData.desc;
+            document.getElementById('target-de-name').innerText = recommendedDE;
+            document.getElementById('target-de-badge').innerText = deDesc;
+            document.getElementById('terminal-script').innerText = profileData.script;
+
+            // Trigger visual transitions
+            document.getElementById('wizard-card').classList.add('hidden');
+            document.getElementById('results-panel').classList.remove('hidden');
 
             // Render Chart visualizations
-            renderProfileChart(data.ram, de);
-            
-            // Seed AI integration context
-            seedAIChatContext(data.name, recommendedDE, selectedAnswers);
-            
-            // Render partition layouts with dynamic state updates
-            updatePartitionPlan();
+            renderResourceChart(rawRAMValues, recommendedDE);
+
+            // Compute default Partition slider allocation based on choice
+            updatePartitionCalculations();
+
+            // Set dynamic values
+            customRecommendations = {
+                distro: profileData.name,
+                de: recommendedDE,
+                gpu: hardwareType === 'dual_gpu_laptop' ? `Integrated: ${gpuType}, Discrete: ${discreteGpu}` : gpuType,
+                hardware: hardwareType
+            };
+
+            // Seed AI context in chat
+            seedAIChatContext();
         }
 
-        // Visual Chart.js Configurations
-        function renderProfileChart(ramValue, chosenDE) {
-            const ctx = document.getElementById('resourceProfileChart').getContext('2d');
+        // METADATA PROFILES FACTORY
+        function getDistroProfile(key, de, gpu, discreteGpu, hardware) {
+            const profiles = {
+                cachy: {
+                    name: 'CachyOS Linux',
+                    desc: 'CachyOS is a highly optimized Arch Linux derivative. It utilizes the modern x86-64-v3 and v4 ISA extensions, and ships optimized Linux kernels containing special schedulers (BORE/EEVDF) for raw gaming responsiveness.',
+                    script: `# Install System optimizations & AUR installer\nsudo pacman -Syu --noconfirm\nyay -S envycontrol mesa-demos mangohud gamemode\n\n# Configure Hybrid GPU (EnvyControl)\nsudo envycontrol -s hybrid\n\n# Enable system performance daemons\nsudo systemctl enable --now power-profiles-daemon`
+                },
+                endeavour: {
+                    name: 'EndeavourOS',
+                    desc: 'A gorgeous, terminal-centric Arch Linux gateway. EndeavourOS offers a clean, vanilla-styled baseline with an active, welcoming community. It provides graphical helpers while keeping the underlying system purely Arch-compatible.',
+                    script: `# Fresh Sync & AUR installation hook\nsudo pacman -Syu\nyay -S --noconfirm libva-nvidia-driver nvidia-prime envycontrol\n\n# Configure multi-gpu graphics bus pathing\nsudo envycontrol -s hybrid --force`
+                },
+                arch: {
+                    name: 'Vanilla Arch Linux',
+                    desc: 'The pure, legendary Linux DIY distribution. Gives complete command-line control of disk layouts, system configurations, and kernel builds. Runs with virtually zero background bloat, conforming entirely to your specifications.',
+                    script: `# Pure minimal baseline setup commands\n# Run within Arch Chroot:\npacman -S --needed base base-devel linux linux-firmware networkmanager git\nsystemctl enable NetworkManager\n\n# Configure Wayland dependencies\npacman -S xorg-xwayland wayland mesa`
+                },
+                mint: {
+                    name: 'Linux Mint (Cinnamon Base)',
+                    desc: 'One of the most trusted and polished operating systems for daily use. Linux Mint provides absolute stability, clean visual panels, and intuitive graphical software tools that require zero console knowledge to master.',
+                    script: `# Update APT packaging libraries & download apps\nsudo apt update && sudo apt upgrade -y\nsudo apt install -y steam-installer flatpak lutris\n\n# Refresh system layout layers\nsudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`
+                },
+                pop: {
+                    name: 'Pop!_OS (by System76)',
+                    desc: 'A premier workstation built specifically for creators, developers, and gamers. Out-of-the-box support for hybrid NVIDIA setups, auto-tiling screen management, and robust flatpak packaging makes it highly efficient.',
+                    script: `# System Package Upgrade\nsudo apt update && sudo apt upgrade -y\n\n# Configure hybrid laptop optimizations\nsudo system76-power graphics hybrid\n\n# Install modern execution modules\nflatpak install flathub com.valvesoftware.Steam -y`
+                },
+                nix: {
+                    name: 'NixOS (Declarative Model)',
+                    desc: 'A revolutionary declarative distribution. NixOS defines your system configuration within a single declarative file (configuration.nix), ensuring system setups are reproducible, isolated, and completely immune to rolling-release breakages.',
+                    script: `# Edit /etc/nixos/configuration.nix to declare configurations\n# Sample Declarative Prime offload:\n\nhardware.nvidia.prime = {\n  offload.enable = true;\n  intelBusId = "PCI:0:2:0";\n  nvidiaBusId = "PCI:1:0:0";\n};\n\n# Rebuild configuration safely\nsudo nixos-rebuild switch`
+                },
+                nobara: {
+                    name: 'Nobara Project (Fedora Base)',
+                    desc: 'A highly tuned Fedora Workstation derivative customized directly by developers for streamlined gaming, streaming, and content production setups. Includes pre-loaded driver setups, Proton bindings, and kernel patches.',
+                    script: `# Synchronize Nobara repositories and configurations\nnobara-sync\n\n# Install key gaming dependencies\nsudo dnf install -y steam mangohud gamemode\n\n# Manage hybrid laptop graphics profiles\nsudo supergfxctl -m Hybrid`
+                },
+                ubuntu: {
+                    name: 'Ubuntu Desktop',
+                    desc: 'The gold standard for standard Linux deployments. Providing rock-solid stability, massive documentation, complete driver integration, and regular security LTS updates suitable for any machine layout.',
+                    script: `# System synchronizations\nsudo apt update && sudo apt upgrade -y\n\n# Detect and install proprietary driver architectures automatically\nsudo ubuntu-drivers install\n\n# Install Flatpak resources\nsudo apt install -y flatpak`
+                },
+                fedora: {
+                    name: 'Fedora Workstation',
+                    desc: 'An upstream development powerhouse representing the bleeding edge of secure, vanilla configurations. Relied upon by professional engineers, Fedora offers clean package bases, GNOME standards, and Red Hat backing.',
+                    script: `# Enable critical non-free RPM gaming repositories\nsudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm\n\n# Install performance GPU drivers\nsudo dnf install akmod-nvidia xorg-x11-drv-nvidia-cuda -y`
+                },
+                gentoo: {
+                    name: 'Gentoo Linux (Source Compile)',
+                    desc: 'The ultimate operating system for manual optimizations. Package software is compiled locally from scratch using source compilation flags, matching target micro-architectures for unparalleled control and zero software bloat.',
+                    script: `# Update Portages repository database\nemerge --sync\n\n# Compile the target @world update environment\nemerge --ask --verbose --update --deep --newuse @world\n\n# Compile custom proprietary NVIDIA driver\nemerge --ask x11-drivers/nvidia-drivers`
+                }
+            };
+
+            let p = profiles[key] || profiles.endeavour;
+
+            // Tailor scripts if NVIDIA or dGPU is chosen
+            if (discreteGpu === 'nvidia' || gpu === 'nvidia') {
+                if (key === 'arch') {
+                    p.script += `\n\n# Configure physical NVIDIA modules\npacman -S nvidia nvidia-utils nvidia-settings\n# Enable sleep power states\nsystemctl enable nvidia-suspend nvidia-hibernate`;
+                }
+            }
+
+            return p;
+        }
+
+        // RESOURCE BREAKDOWN DOUGHNUT CHART GRAPHIC
+        function renderResourceChart(dataValues, deName) {
+            const ctx = document.getElementById('resourceChart').getContext('2d');
             
             if (resourceChartInstance) {
                 resourceChartInstance.destroy();
             }
 
-            // Create contextual dataset comparison for the specific DE profile selected
-            const datasetValues = [ramValue, 650, 400]; // Active, Average KDE, Window Managers
-            
             resourceChartInstance = new Chart(ctx, {
-                type: 'bar',
+                type: 'doughnut',
                 data: {
-                    labels: ['Selected Setup', 'KDE Plasma standard', 'Minimal Window Manager'],
+                    labels: ['Desktop Core Idle', 'System Daemons (systemd)', 'Free Workspace Headroom'],
                     datasets: [{
-                        label: 'Estimated Memory (MB)',
-                        data: datasetValues,
-                        backgroundColor: ['#f43f5e', '#3b82f6', '#10b981'],
-                        borderRadius: 8,
-                        borderWidth: 0
+                        data: dataValues,
+                        backgroundColor: [
+                            'rgba(244, 63, 94, 0.75)', // Rose
+                            'rgba(59, 130, 246, 0.75)',  // Blue
+                            'rgba(16, 185, 129, 0.25)'  // Emerald green
+                        ],
+                        borderColor: [
+                            '#f43f5e',
+                            '#3b82f6',
+                            'rgba(16, 185, 129, 0.4)'
+                        ],
+                        borderWidth: 1.5,
+                        hoverOffset: 12
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                font: {
+                                    size: 10,
+                                    family: 'Inter'
+                                },
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        },
                         tooltip: {
-                            backgroundColor: '#0f1526',
-                            titleColor: '#f8fafc',
-                            bodyColor: '#cbd5e1',
-                            borderColor: 'rgba(255,255,255,0.08)',
-                            borderWidth: 1
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ~${context.raw} MB`;
+                                }
+                            }
                         }
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(255,255,255,0.05)' },
-                            ticks: { color: '#64748b', font: { size: 10 } }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#94a3b8', font: { size: 10 } }
-                        }
-                    }
+                    cutout: '72%'
                 }
             });
         }
 
-        // copy terminal blueprint snippet
-        function copyTerminalCode() {
-            const codeBlock = `sudo pacman -Syu\nsudo pacman -S tlp tlp-rd\nsudo systemctl enable --now tlp\nyay -S envycontrol-git\nsudo envycontrol -s hybrid\nsudo systemctl enable nvidia-suspend.service nvidia-resume.service`;
-            const dummy = document.createElement("textarea");
-            document.body.appendChild(dummy);
-            dummy.value = codeBlock;
-            dummy.select();
-            document.execCommand("copy");
-            document.body.removeChild(dummy);
+        // LIVE DUAL-BOOT STORAGE SLIDER MATH
+        function updatePartitionCalculations() {
+            const diskCapacity = parseInt(document.getElementById('total-disk-capacity').value);
+            const strategy = document.getElementById('dual-boot-strategy').value;
+            const slider = document.getElementById('disk-allocation-slider');
+            const sliderContainer = document.getElementById('slider-allocator-container');
+
+            let winSize = 0;
+            let linuxSize = 0;
+            let swapSize = 8; // standard 8GB swap block for modern configurations
+            let espSize = 1; // 1GB EFI System Partition
+
+            if (strategy === 'wipe') {
+                // Wipe disk
+                sliderContainer.classList.add('hidden');
+                winSize = 0;
+                linuxSize = diskCapacity - espSize - swapSize;
+            } else if (strategy === 'dedicated') {
+                // Isolated Disk Strategy
+                sliderContainer.classList.add('hidden');
+                winSize = 0;
+                linuxSize = diskCapacity - espSize - swapSize;
+            } else {
+                // Same Drive Dual Boot
+                sliderContainer.classList.remove('hidden');
+                const percent = parseInt(slider.value) / 100;
+                
+                let availableCapacity = diskCapacity - espSize - swapSize;
+                winSize = Math.floor(availableCapacity * (1 - percent));
+                linuxSize = Math.floor(availableCapacity * percent);
+            }
+
+            // Sync visual text blocks
+            document.getElementById('win-display').innerText = `${winSize} GB`;
+            document.getElementById('linux-display').innerText = `${linuxSize} GB`;
+
+            // Draw fluid dynamic partition bar block
+            const barContainer = document.getElementById('partition-visualizer-bar');
+            const legendContainer = document.getElementById('partition-legend');
             
-            // Temporary confirmation visual
-            const notifier = document.createElement("div");
-            notifier.className = "fixed bottom-5 right-5 bg-emerald-600 border border-emerald-500 text-white font-bold px-4 py-3 rounded-xl shadow-lg z-50 text-xs flex items-center space-x-2";
-            notifier.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Blueprint copied to clipboard!</span>`;
-            document.body.appendChild(notifier);
-            setTimeout(() => notifier.remove(), 2500);
-        }
+            barContainer.innerHTML = '';
+            legendContainer.innerHTML = '';
 
-        function resetWizard() {
-            selectedAnswers = {};
-            currentStepIndex = 0;
-            document.getElementById('results-screen').classList.add('hidden');
-            document.getElementById('wizard-screen').classList.remove('hidden');
-            renderStep();
-        }
+            // Compute partitions array
+            let partitions = [];
+            
+            // 1. EFI Partition
+            partitions.push({ name: 'ESP (Boot)', size: espSize, color: 'bg-emerald-600', format: 'FAT32' });
+            
+            // 2. Windows Partition
+            if (winSize > 0) {
+                partitions.push({ name: 'Windows OS', size: winSize, color: 'bg-blue-600', format: 'NTFS' });
+            }
 
-        // AI Integration State Properties
-        let recommendedContext = {};
+            // 3. Linux Partition
+            partitions.push({ name: 'Linux Root (/)', size: linuxSize, color: 'bg-rose-600', format: 'Btrfs / Ext4' });
 
-        function seedAIChatContext(distro, de, answers) {
-            recommendedContext = {
-                distro: distro,
-                de: de,
-                answers: answers
-            };
-            // Clear prior user messages but keep system initialization
-            document.getElementById('ai-chat-history').innerHTML = `
-                <div class="bg-slate-900/50 border border-slate-800/80 p-3.5 rounded-2xl max-w-[85%]">
-                    Welcome back! I am optimized with context for your recommended <strong>${distro}</strong> + <strong>${de}</strong> configuration. Ask me any configuration, driver setup, or partition setup questions.
-                </div>
-            `;
-        }
+            // 4. Linux Swap
+            partitions.push({ name: 'System Swap', size: swapSize, color: 'bg-purple-600/80', format: 'SWAP' });
 
-        async function sendChatMessage() {
-            const inputEl = document.getElementById('ai-chat-input');
-            const chatHistoryEl = document.getElementById('ai-chat-history');
-            const query = inputEl.value.trim();
-            if (!query) return;
-
-            // User Chat Bubble
-            const userBubble = document.createElement('div');
-            userBubble.className = "bg-blue-600 text-white p-3.5 rounded-2xl max-w-[85%] ml-auto text-right";
-            userBubble.innerText = query;
-            chatHistoryEl.appendChild(userBubble);
-            inputEl.value = "";
-            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
-
-            // Typing Indicator Bubble
-            const typingBubble = document.createElement('div');
-            typingBubble.className = "bg-slate-900/40 border border-slate-800 p-3 rounded-2xl max-w-[50px] text-center";
-            typingBubble.innerHTML = `<i class="fa-solid fa-ellipsis animate-bounce text-slate-500"></i>`;
-            chatHistoryEl.appendChild(typingBubble);
-            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
-
-            try {
-                // Execute API request to Gemini Engine using canvas dynamic key insertion
-                const systemPrompt = `You are a world-class Linux Systems Architect specializing in desktop environments, disk partitioning, dual-boot bootloaders (GRUB/systemd-boot), driver configs, and gaming platforms (Proton/Wine). The user has just run a questionnaire and received the recommendation: ${recommendedContext.distro} with ${recommendedContext.de} running on a ${recommendedContext.answers.hardware} setup (GPU: ${recommendedContext.answers.gpu}). Keep your answers clean, technical, high-impact, providing precise CLI copy-paste commands, avoiding conversational fluff.`;
-                const apiKey = ""; // Left empty for automatic Canvas API Key assignment
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-                const payload = {
-                    contents: [{ parts: [{ text: query }] }],
-                    systemInstruction: {
-                        parts: [{ text: systemPrompt }]
-                    }
-                };
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-                typingBubble.remove();
-
-                const aiBubble = document.createElement('div');
-                aiBubble.className = "bg-slate-900 border border-slate-800 p-4 rounded-2xl max-w-[90%] whitespace-pre-wrap leading-relaxed text-xs font-mono";
-
-                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    const rawText = result.candidates[0].content.parts[0].text;
-                    aiBubble.innerText = rawText;
-                } else {
-                    aiBubble.innerText = "Apologies, the compiler encountered an issue. Please try rephrasing your command-line question.";
+            // Render partitions onto physical width bar percentage
+            partitions.forEach(p => {
+                const widthPercent = (p.size / diskCapacity) * 100;
+                const partBlock = document.createElement('div');
+                partBlock.className = `${p.color} h-full flex flex-col justify-center items-center text-white transition-all duration-300 border-r border-slate-950/40`;
+                partBlock.style.width = `${widthPercent}%`;
+                
+                // Show text if size permits
+                if (widthPercent > 6) {
+                    partBlock.innerHTML = `<span class="truncate px-1">${p.name}</span><span class="text-[8px] opacity-80">${p.size}G</span>`;
                 }
+                barContainer.appendChild(partBlock);
 
-                chatHistoryEl.appendChild(aiBubble);
-                chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+                // Add to legend
+                const leg = document.createElement('div');
+                leg.className = 'flex items-center gap-2 font-mono text-[10px]';
+                leg.innerHTML = `<span class="h-2.5 w-2.5 rounded-sm ${p.color} block"></span><span><strong>${p.name}:</strong> ${p.size} GB (${p.format})</span>`;
+                legendContainer.appendChild(leg);
+            });
+        }
 
-            } catch (error) {
-                typingBubble.remove();
-                const errBubble = document.createElement('div');
-                errBubble.className = "bg-rose-950/40 border border-rose-900 text-rose-300 p-3 rounded-2xl max-w-[85%] text-xs font-mono";
-                errBubble.innerText = "Network Gateway Error: Could not resolve prompt payload with Gemini API service.";
-                chatHistoryEl.appendChild(errBubble);
-                chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+        // DYNAMIC RESULTS TAB SWITCHER
+        function switchTab(tabId) {
+            activeTab = tabId;
+            const btnBlueprint = document.getElementById('tab-btn-blueprint');
+            const btnDualboot = document.getElementById('tab-btn-dualboot');
+            const contentBlueprint = document.getElementById('tab-content-blueprint');
+            const contentDualboot = document.getElementById('tab-content-dualboot');
+
+            if (tabId === 'blueprint') {
+                btnBlueprint.className = 'px-5 py-3 border-b-2 border-blue-500 font-bold text-xs text-white uppercase tracking-wider flex items-center gap-2 transition';
+                btnDualboot.className = 'px-5 py-3 border-b-2 border-transparent font-bold text-xs text-slate-400 hover:text-slate-200 uppercase tracking-wider flex items-center gap-2 transition';
+                contentBlueprint.classList.remove('hidden');
+                contentDualboot.classList.add('hidden');
+            } else {
+                btnDualboot.className = 'px-5 py-3 border-b-2 border-blue-500 font-bold text-xs text-white uppercase tracking-wider flex items-center gap-2 transition';
+                btnBlueprint.className = 'px-5 py-3 border-b-2 border-transparent font-bold text-xs text-slate-400 hover:text-slate-200 uppercase tracking-wider flex items-center gap-2 transition';
+                contentDualboot.classList.remove('hidden');
+                contentBlueprint.classList.add('hidden');
+                // Redraw partition sliders correctly
+                updatePartitionCalculations();
             }
         }
 
-        function handleChatKeyDown(event) {
-            if (event.key === "Enter") {
-                sendChatMessage();
+        // SYSTEM UTILITY: Clipboard handling
+        function copyCode(elementId) {
+            const preBlock = document.getElementById(elementId);
+            const textToCopy = preBlock.innerText;
+
+            // Use direct textarea DOM fallback matching sandboxing security constraints safely
+            const dummyTextArea = document.createElement('textarea');
+            dummyTextArea.value = textToCopy;
+            document.body.appendChild(dummyTextArea);
+            dummyTextArea.select();
+            
+            try {
+                document.execCommand('copy');
+                // Trigger local success popup message
+                showNotification('Setup blueprint copied to clipboard!', 'success');
+            } catch (err) {
+                showNotification('Failed to execute copy action.', 'error');
             }
+            document.body.removeChild(dummyTextArea);
+        }
+
+        // Visual toast notification fallback
+        function showNotification(message, type) {
+            // Check for previous active notifications and wipe them
+            const prevNotif = document.getElementById('toast-notif');
+            if (prevNotif) prevNotif.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'toast-notif';
+            toast.className = `fixed bottom-5 right-5 z-[200] px-5 py-3 rounded-xl border font-bold text-xs shadow-lg animate-fade-in flex items-center gap-2 ${
+                type === 'success' 
+                ? 'bg-slate-900 border-emerald-500/30 text-emerald-400 shadow-emerald-500/5' 
+                : 'bg-slate-900 border-rose-500/30 text-rose-400 shadow-rose-500/5'
+            }`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i> <span>${message}</span>`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // RESET APPLICATION
+        function resetWizard() {
+            currentStepIndex = 1;
+            selectedAnswers = {};
+            
+            // Hide results, hide wizard, and reveal original landing dashboard
+            document.getElementById('results-panel').classList.add('hidden');
+            document.getElementById('wizard-card').classList.add('hidden');
+            document.getElementById('landing-screen').classList.remove('hidden');
+
+            // Hide intermediate wizard forms
+            for (let i = 2; i <= 5; i++) {
+                document.getElementById(`step-${i}`).classList.add('hidden');
+            }
+            document.getElementById('step-1').classList.remove('hidden');
+
+            // Sync controls
+            document.getElementById('prev-btn').classList.add('hidden');
+            document.getElementById('next-btn').classList.remove('hidden');
+            document.getElementById('calculate-btn').classList.add('hidden');
+            document.getElementById('spacer-div').classList.remove('hidden');
+            document.getElementById('progress-bar-fill').style.width = '20%';
+            document.getElementById('step-indicator').innerText = 'Step 1 of 5: Platform Mapping';
+            document.getElementById('wizard-form').reset();
+            toggleDualGPUDropdowns(false);
+        }
+
+        // AI CHATBOT CONTROLLER & STORAGE KEYS
+        function toggleKeyInput() {
+            const container = document.getElementById('api-key-container');
+            container.classList.toggle('hidden');
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('gemini-key').value.trim();
+            if (key) {
+                localStorage.setItem('gemini_api_key', key);
+                document.getElementById('key-label').innerText = 'Key Active';
+                showNotification('Gemini API key saved to local client storage!', 'success');
+                document.getElementById('api-key-container').classList.add('hidden');
+            } else {
+                localStorage.removeItem('gemini_api_key');
+                document.getElementById('key-label').innerText = 'Set API Key';
+                showNotification('API Key wiped.', 'error');
+            }
+        }
+
+        // Load active client keys on boot
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if (savedKey) {
+                document.getElementById('gemini-key').value = savedKey;
+                document.getElementById('key-label').innerText = 'Key Active';
+            }
+        });
+
+        // Seed Context on calculate
+        function seedAIChatContext() {
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = ''; // wipe history
+
+            const introMsg = document.createElement('div');
+            introMsg.className = 'bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 text-slate-300 leading-relaxed';
+            introMsg.innerHTML = `I have successfully compiled your system specifications!
+            <br><br>
+            <strong>Ecosystem Match Target:</strong> <span class="text-blue-400 font-bold">${customRecommendations.distro}</span> with <span class="text-rose-400 font-bold">${customRecommendations.de}</span>.
+            <br>
+            <strong>GPU Mapping Profile:</strong> ${customRecommendations.gpu}.
+            <br><br>
+            You can enter your own <strong>Gemini API Key</strong> in the top-right options to execute live system chat, or prompt me for simulated local configurations now!`;
+            messagesContainer.appendChild(introMsg);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // CHAT INGEST & API COMMUNICATIONS
+        async function handleChatSubmit(event) {
+            event.preventDefault();
+            const inputEl = document.getElementById('chat-input');
+            const prompt = inputEl.value.trim();
+            if (!prompt) return;
+
+            // Clear input box immediately
+            inputEl.value = '';
+
+            // Render User Bubble
+            addChatMessage(prompt, 'user');
+
+            // Show Loading Spinner Bubble
+            const loadingBubble = addChatMessage('<div class="flex items-center space-x-2"><i class="fa-solid fa-spinner animate-spin"></i> <span>Formulating optimization strategy...</span></div>', 'ai-loading');
+
+            const apiKey = localStorage.getItem('gemini_api_key');
+
+            if (apiKey) {
+                // Real execution route using Gemini API
+                try {
+                    const responseText = await queryGeminiAPI(prompt, apiKey);
+                    loadingBubble.remove();
+                    addChatMessage(responseText, 'ai');
+                } catch (err) {
+                    loadingBubble.remove();
+                    addChatMessage(`API Gateway connection timeout: ${err.message}. Defaulting to standard offline compiler advice.`, 'ai');
+                }
+            } else {
+                // Local intelligent fallback simulation mimicking standard setup queries
+                setTimeout(() => {
+                    loadingBubble.remove();
+                    const simulatedResponse = getLocalSimulatedResponse(prompt);
+                    addChatMessage(simulatedResponse, 'ai');
+                }, 1200);
+            }
+        }
+
+        function addChatMessage(content, sender) {
+            const container = document.getElementById('chat-messages');
+            const bubble = document.createElement('div');
+            
+            if (sender === 'user') {
+                bubble.className = 'bg-blue-600/10 border border-blue-500/20 p-3 rounded-2xl text-slate-200 self-end ml-auto max-w-[85%]';
+                bubble.innerText = content;
+            } else if (sender === 'ai-loading') {
+                bubble.className = 'bg-slate-900 p-3 rounded-2xl border border-slate-800 text-slate-400 mr-auto max-w-[85%]';
+                bubble.innerHTML = content;
+            } else {
+                bubble.className = 'bg-slate-900/80 p-3 rounded-2xl border border-slate-800 text-slate-300 mr-auto max-w-[85%] leading-relaxed space-y-2';
+                bubble.innerHTML = formatMarkdownResponse(content);
+            }
+
+            container.appendChild(bubble);
+            container.scrollTop = container.scrollHeight;
+            return bubble;
+        }
+
+        // Simple markdown parsing helper for system prompt formatting inside UI
+        function formatMarkdownResponse(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/`([^`]+)`/g, '<code class="bg-black/40 px-1.5 py-0.5 rounded font-mono text-[11px] text-emerald-400">$1</code>')
+                .replace(/\n/g, '<br>');
+        }
+
+        // DYNAMIC GEMINI API CONNECT ROUTE
+        async function queryGeminiAPI(userQuery, apiKey) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            
+            // Build Context profile payload
+            const contextSeed = `You are an expert Linux Systems Architect chatbot. 
+            The user is running the "Architect Linux Navigations" web utility.
+            The dynamic wizard computed their optimal recommendation as:
+            - Distro: ${customRecommendations.distro}
+            - Desktop Environment: ${customRecommendations.de}
+            - User Comfort level with commands: ${document.querySelector('input[name="experience"]:checked').value}
+            - GPU Configuration: ${customRecommendations.gpu}
+            
+            Address their queries technically but concisely (under 150 words). Provide copy-pasteable terminal commands using \`code\` formatting where applicable. Keep the advice tailored to their specific dynamic setup.`;
+
+            const requestBody = {
+                contents: [{
+                    parts: [{
+                        text: `${contextSeed}\n\nUser Question: ${userQuery}`
+                    }]
+                }]
+            };
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error?.message || 'Gemini Server Error');
+            }
+
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        // OFFLINE SIMULATION ARCHITECTURE
+        function getLocalSimulatedResponse(query) {
+            const lower = query.toLowerCase();
+            const distro = customRecommendations ? customRecommendations.distro : 'CachyOS';
+            const de = customRecommendations ? customRecommendations.de : 'GNOME';
+
+            if (lower.includes('driver') || lower.includes('nvidia') || lower.includes('gpu')) {
+                return `To configure dynamic hybrid switching for your GPU, we recommend using **EnvyControl** on Arch bases, or **supergfxctl** on Fedora/Nobara.
+
+Execute the following commands:
+\`sudo envycontrol -s hybrid\`  (For Arch systems)
+or
+\`supergfxctl -m Hybrid\`       (For Fedora/Nobara systems)
+
+Check active graphics:
+\`envycontrol --query\` or \`supergfxctl -g\`
+
+*Note: This cuts off energy to your discrete graphics card entirely when executing basic 2D applications under ${de}.*`;
+            }
+
+            if (lower.includes('partition') || lower.includes('dualboot') || lower.includes('windows') || lower.includes('boot')) {
+                return `For a secure dual-boot sequence alongside Windows 11:
+
+1. **Shrink your NTFS Partition** directly within Windows Disk Management tool first.
+2. Ensure you disabled **Fast Startup** inside Windows (it causes partition locking).
+3. Choose the manual option in the **${distro} installer** to mount the newly freed capacity as \`/\` (root) formatted with **Btrfs**, **Ext4**, or via a declarative config if using **NixOS**.
+4. Set your mount directory path for the existing EFI boot partition safely to \`/boot/efi\` or \`/boot\` without formatting it (keeps the Windows boot manager intact).`;
+            }
+
+            if (lower.includes('gaming') || lower.includes('fps') || lower.includes('proton')) {
+                return `To secure elite gaming framerates under **${distro}**:
+
+1. Ensure **GameMode** is fully active:
+   \`gamemoderun %command%\` inside Steam properties.
+2. Enable HUD monitoring metrics using **MangoHud**:
+   \`mangohud %command%\`
+3. If running **Nobara** or **CachyOS**, Wine/Proton-GE dependencies are already preloaded to optimize Direct3D compilation pipelines seamlessly!`;
+            }
+
+            // Universal general backup prompt response
+            return `That is an excellent customization query! Under **${distro}** operating **${de}**, we recommend executing:
+
+\`sudo pacman -Syu\` (on Arch/Cachy), \`sudo dnf upgrade\` (on Fedora/Nobara), or rebuilding your Nix configs with \`nixos-rebuild\`.
+
+To configure this layout, let me know if you would like me to draft a custom installation script block or layout safety guidelines!`;
         }
     </script>
 </body>
