@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Linux Distro Recommender & Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Premium Tech Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --bg-dark: #070a13;
+            --card-dark: #0f1526;
+            --primary-glow: rgba(59, 130, 246, 0.15);
+            --secondary-glow: rgba(244, 63, 94, 0.15);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        .heading-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(15, 21, 38, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card-interactive {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card-interactive:hover {
+            transform: translateY(-4px);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 12px 40px 0 rgba(59, 130, 246, 0.15);
+        }
+
+        /* Active selection styling */
+        .selected-option {
+            border-color: #3b82f6 !important;
+            background: rgba(59, 130, 246, 0.12) !important;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2) inset;
+        }
+
+        /* Progress Bar Animation */
+        .progress-bar-fill {
+            transition: width 0.4s ease-in-out;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070a13;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+
+        /* Partition Block Transitions */
+        .partition-block {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-rose-500 flex items-center justify-center shadow-lg">
+                    <i class="fa-brands fa-linux text-white text-xl"></i>
+                </div>
+                <div>
+                    <span class="heading-font font-bold text-lg tracking-wider bg-gradient-to-r from-blue-400 to-rose-400 bg-clip-text text-transparent">WHICHDISTRO</span>
+                    <p class="text-[10px] text-slate-400 font-semibold tracking-widest uppercase">Linux Navigator</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-xs text-slate-400 bg-slate-800/60 px-3 py-1.5 rounded-full border border-slate-700/50">
+                    <i class="fa-solid fa-microchip text-blue-400 mr-1.5 animate-pulse"></i> Interactive Engine v2.5
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
+        
+        <!-- Welcome Screen -->
+        <section id="welcome-screen" class="max-w-3xl mx-auto text-center py-12">
+            <div class="inline-flex items-center space-x-2 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-full text-blue-400 text-xs font-semibold mb-6">
+                <i class="fa-solid fa-compass-drafting"></i>
+                <span>Stop distro hopping today</span>
+            </div>
+            <h1 class="heading-font text-4xl md:text-6xl font-black mb-6 tracking-tight leading-tight">
+                Find Your Perfect <br>
+                <span class="bg-gradient-to-r from-blue-400 via-indigo-400 to-rose-400 bg-clip-text text-transparent">Linux Configuration</span>
+            </h1>
+            <p class="text-slate-400 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
+                Answer 5 highly targeted questions about your hardware architecture, professional workflows, desktop desires, and gaming requirements. Receive an instantly analyzed recommendation with dynamic performance profiles, dual-boot partition builders, and terminal blueprints.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <button onclick="startWizard()" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold px-8 py-4 rounded-2xl shadow-lg transition duration-200 flex items-center justify-center space-x-3 transform active:scale-95">
+                    <span>Start Recommendation Wizard</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Dynamic Recommendation Wizard Container -->
+        <section id="wizard-screen" class="hidden max-w-4xl mx-auto w-full glass-card rounded-3xl p-6 md:p-10 relative overflow-hidden">
+            <!-- Progress Tracker -->
+            <div class="mb-10">
+                <div class="flex justify-between items-center mb-3">
+                    <span id="wizard-step-label" class="text-xs uppercase font-bold tracking-wider text-blue-400">Step 1 of 5</span>
+                    <span id="wizard-step-title" class="text-sm font-semibold text-slate-300">Hardware Platform Selection</span>
+                </div>
+                <div class="w-full bg-slate-800/80 h-2 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="progress-bar-fill h-full bg-gradient-to-r from-blue-500 to-indigo-500" style="width: 20%;"></div>
+                </div>
+            </div>
+
+            <!-- Dynamic Question Form Content -->
+            <div id="question-container" class="min-h-[280px] flex flex-col justify-between">
+                <!-- Injected via JavaScript -->
+            </div>
+
+            <!-- Wizard Navigation Buttons -->
+            <div class="flex items-center justify-between border-t border-slate-800/80 pt-6 mt-8">
+                <button id="prev-btn" onclick="prevStep()" class="hidden text-sm font-semibold text-slate-400 hover:text-white flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-angle-left"></i>
+                    <span>Back</span>
+                </button>
+                <span class="flex-grow"></span>
+                <button id="next-btn" onclick="nextStep()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-6 py-3 rounded-xl transition duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <span>Continue</span>
+                    <i class="fa-solid fa-angle-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Results Dashboard -->
+        <section id="results-screen" class="hidden w-full space-y-8 animate-fade-in">
+            <!-- Hero Results Card -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 glass-card rounded-3xl p-8 md:p-10 border-l-4 border-l-blue-500 relative overflow-hidden">
+                    <!-- Background Accent Glow -->
+                    <div class="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl -z-10"></div>
+                    
+                    <div class="flex items-start justify-between mb-6">
+                        <div>
+                            <span class="text-xs font-bold uppercase text-blue-400 tracking-widest px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20">The Perfect Match</span>
+                            <h2 id="recommended-distro" class="heading-font text-4xl md:text-6xl font-black mt-4 tracking-tight">EndeavourOS</h2>
+                            <p id="recommended-de" class="text-lg md:text-xl text-slate-300 font-medium mt-2">GNOME Desktop Environment (Wayland)</p>
+                        </div>
+                        <div id="distro-icon-wrapper" class="w-20 h-20 bg-slate-800/80 rounded-2xl flex items-center justify-center border border-slate-700 text-slate-200 text-4xl shadow-xl">
+                            <i class="fa-brands fa-linux"></i>
+                        </div>
+                    </div>
+
+                    <p id="recommendation-desc" class="text-slate-300 leading-relaxed text-base md:text-lg mb-8">
+                        Based on your profile, we highly recommend EndeavourOS with GNOME...
+                    </p>
+
+                    <!-- Feature Tags -->
+                    <div class="flex flex-wrap gap-2.5 mb-8" id="match-badges">
+                        <!-- Instantiated via JS -->
+                    </div>
+
+                    <!-- Quick Configuration Profile Summary -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80">
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Package Base</span>
+                            <span id="spec-base" class="text-sm font-semibold text-slate-200">Arch Linux</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Target GPU Driver</span>
+                            <span id="spec-gpu" class="text-sm font-semibold text-slate-200">NVIDIA Proprietary</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Display Server</span>
+                            <span id="spec-display" class="text-sm font-semibold text-slate-200">Wayland (Native)</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Power Manager</span>
+                            <span id="spec-power" class="text-sm font-semibold text-slate-200">TLP + tlp-pd</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SIDE BAR: Key Performance Metrics -->
+                <div class="glass-card rounded-3xl p-8 flex flex-col justify-between">
+                    <div>
+                        <h3 class="heading-font text-xl font-bold mb-4 flex items-center">
+                            <span class="w-2 h-6 bg-rose-500 mr-3 rounded-full"></span> Resource & Latency Profile
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-6">Visual comparison of memory usage & platform update freshness metrics.</p>
+                        
+                        <div class="chart-container relative h-[200px] w-full">
+                            <canvas id="resourceProfileChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 space-y-4 pt-4 border-t border-slate-800">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-400 font-medium">Estimated Idle RAM:</span>
+                            <span id="stat-ram" class="font-bold text-rose-400">~850 MB</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-400 font-medium">Laptop Power Footprint:</span>
+                            <span id="stat-power" class="font-bold text-emerald-400">&lt; 8.0W Idle</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blueprints, Dual Boot & AI Assistant Split Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Dynamic Helper Card with Tab switching layout -->
+                <div class="glass-card rounded-3xl p-8 flex flex-col justify-between min-h-[550px]">
+                    <div>
+                        <!-- Tabs Header -->
+                        <div class="flex border-b border-slate-800/80 mb-6">
+                            <button id="tab-btn-blueprint" onclick="switchResultTab('blueprint')" class="pb-3 text-sm font-bold border-b-2 border-blue-500 text-white flex items-center space-x-2 transition mr-6">
+                                <i class="fa-solid fa-terminal text-blue-400"></i>
+                                <span>Optimization Blueprint</span>
+                            </button>
+                            <button id="tab-btn-dualboot" onclick="switchResultTab('dualboot')" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-white flex items-center space-x-2 transition">
+                                <i class="fa-solid fa-hard-drive text-rose-400"></i>
+                                <span>Dual-Boot & Partition Planner</span>
+                            </button>
+                        </div>
+
+                        <!-- TAB CONTENT 1: Post-Install Optimization Blueprint -->
+                        <div id="tab-content-blueprint" class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs text-slate-400">Run these commands immediately after installing to configure hybrid graphics and power saving.</p>
+                                <button onclick="copyTerminalCode()" class="text-xs text-slate-400 hover:text-white px-3 py-1.5 bg-slate-800 rounded-lg border border-slate-700 transition flex items-center space-x-1">
+                                    <i class="fa-regular fa-copy"></i> <span>Copy Code</span>
+                                </button>
+                            </div>
+                            
+                            <div class="relative bg-slate-950 p-5 rounded-2xl border border-slate-800 font-mono text-xs text-slate-300 leading-relaxed overflow-x-auto whitespace-pre">
+<span class="text-slate-500"># 1. Update system & refresh package databases</span>
+<span class="text-blue-400">sudo</span> pacman -Syu
+
+<span class="text-slate-500"># 2. Configure power management profiles</span>
+<span class="text-blue-400">sudo</span> pacman -S tlp tlp-rd
+<span class="text-blue-400">sudo</span> systemctl enable --now tlp
+
+<span class="text-slate-500"># 3. Apply recommended GPU management tooling</span>
+<span id="terminal-gpu-command">yay -S envycontrol-git
+sudo envycontrol -s hybrid</span>
+
+<span class="text-slate-500"># 4. Power & suspend driver synchronization hooks</span>
+<span class="text-blue-400">sudo</span> systemctl enable nvidia-suspend.service nvidia-resume.service
+                            </div>
+                            
+                            <div class="bg-slate-900/30 p-4 rounded-xl border border-slate-800/80 flex items-start space-x-3 mt-4">
+                                <i class="fa-solid fa-circle-info text-amber-400 mt-1"></i>
+                                <p class="text-xs text-slate-400">This configures core system services to prevent flickering or graphical freezing upon resuming from suspend sleep cycles.</p>
+                            </div>
+                        </div>
+
+                        <!-- TAB CONTENT 2: Interactive Dual Boot and Partition Planner -->
+                        <div id="tab-content-dualboot" class="hidden space-y-6">
+                            
+                            <!-- Control settings row -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-800/80">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Setup Strategy</label>
+                                    <select id="db-strategy" onchange="updatePartitionPlan()" class="bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-3 py-2 text-xs w-full outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option value="dual_shared">Dual-Boot (Single Shared Drive)</option>
+                                        <option value="dual_separate">Dual-Boot (Two Dedicated Drives)</option>
+                                        <option value="single_linux">Linux Only (Wipe Clean)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Disk Allocation</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" id="db-disk-slider" min="128" max="2048" step="128" value="512" oninput="updatePartitionPlan()" class="flex-grow accent-blue-500 cursor-pointer">
+                                        <span id="db-disk-display" class="text-xs font-bold text-blue-400 bg-blue-900/20 px-2 py-1 rounded">512 GB</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Visual Disk bar partition map visualization -->
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Planned Disk Partition Layout</h4>
+                                <div id="partition-visualizer-bar" class="w-full h-10 bg-slate-950 rounded-xl overflow-hidden flex border border-slate-800">
+                                    <!-- Injected dynamically via JS -->
+                                </div>
+                                <!-- Legend Grid -->
+                                <div id="partition-legend" class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-[10px]">
+                                    <!-- Dynamic list legends -->
+                                </div>
+                            </div>
+
+                            <!-- Dynamic terminal CLI partitioning instruction -->
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">UEFI & GRUB Setup Instruction</h4>
+                                <div id="partition-instruction-code" class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed max-h-[140px] overflow-y-auto">
+                                    <!-- Custom Terminal commands generated dynamically via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Pre-flight safety checklists -->
+                            <div class="p-4 bg-rose-500/5 border border-rose-500/20 rounded-xl">
+                                <h4 class="text-xs font-bold text-rose-400 flex items-center mb-2">
+                                    <i class="fa-solid fa-triangle-exclamation mr-2"></i> Crucial Pre-installation Checklist (Windows Host)
+                                </h4>
+                                <div class="space-y-2 text-xs">
+                                    <label class="flex items-start space-x-2 cursor-pointer hover:text-white transition">
+                                        <input type="checkbox" class="rounded border-slate-700 bg-slate-950 text-blue-500 mt-0.5">
+                                        <span>Disable <strong>Windows Fast Startup</strong> (prevents lock on NTFS drives, allowing Linux access).</span>
+                                    </label>
+                                    <label class="flex items-start space-x-2 cursor-pointer hover:text-white transition">
+                                        <input type="checkbox" class="rounded border-slate-700 bg-slate-950 text-blue-500 mt-0.5">
+                                        <span>Suspend or Disable <strong>BitLocker Device Encryption</strong> on the target storage.</span>
+                                    </label>
+                                    <label class="flex items-start space-x-2 cursor-pointer hover:text-white transition">
+                                        <input type="checkbox" class="rounded border-slate-700 bg-slate-950 text-blue-500 mt-0.5">
+                                        <span>Verify UEFI Boot Mode in BIOS (ensure Legacy/CSM is completely Disabled).</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Systems Architect Chat Assistant -->
+                <div class="glass-card rounded-3xl p-8 flex flex-col justify-between h-[550px]">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+                                <i class="fa-solid fa-brain text-emerald-400 animate-pulse text-xs"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm">Ask our Systems Architect</h4>
+                                <p class="text-[10px] text-slate-500">Ask about packages, drivers, or partition configs</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider bg-slate-800 px-2 py-1 rounded">Gemini Powered</span>
+                    </div>
+
+                    <!-- Chat conversation timeline -->
+                    <div id="ai-chat-history" class="flex-grow overflow-y-auto space-y-4 pr-2 text-sm text-slate-300">
+                        <div class="bg-slate-900/50 border border-slate-800/80 p-3.5 rounded-2xl max-w-[85%]">
+                            Hello! I am configured with the context of your recommended <strong>Linux Match</strong>. Ask me anything about driver installs, customizing your DE, or dual-boot setups!
+                        </div>
+                    </div>
+
+                    <!-- Input Bar -->
+                    <div class="mt-4 pt-4 border-t border-slate-800/80">
+                        <div class="flex items-center space-x-2 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+                            <input type="text" id="ai-chat-input" placeholder="e.g., How do I configure GRUB dual-boot with Windows?" class="bg-transparent border-none outline-none focus:ring-0 flex-grow text-sm text-white px-3" onkeydown="handleChatKeyDown(event)">
+                            <button onclick="sendChatMessage()" class="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl transition duration-150 flex items-center justify-center">
+                                <i class="fa-solid fa-paper-plane text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Over button -->
+            <div class="text-center pt-8">
+                <button onclick="resetWizard()" class="text-slate-400 hover:text-white transition duration-150 text-sm font-semibold inline-flex items-center space-x-2 bg-slate-900 px-6 py-3 rounded-xl border border-slate-800 hover:border-slate-700">
+                    <i class="fa-solid fa-rotate-left"></i> <span>Re-run Recommendation Wizard</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-950 bg-slate-950 px-4 py-8 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <p>&copy; 2026 ARCHITECT Linux Navigations &bull; Interactive Hardware & Distro Recommender Ecosystem</p>
+            <div class="flex space-x-4">
+                <a href="#welcome-screen" class="hover:text-blue-400 transition">Engine Policies</a>
+                <a href="#welcome-screen" class="hover:text-blue-400 transition">Systems Schema</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Data Models for recommendations and dynamic routing
+        const DISTROS_DB = {
+            endeavour: {
+                name: "EndeavourOS",
+                desc: "An outstanding choice for intermediate-to-advanced users looking for a modern, pure Arch-based desktop interface. It installs vanilla graphics configurations without bloated default frameworks, keeping performance at an absolute maximum.",
+                icon: "fa-brands fa-linux",
+                base: "Arch Linux",
+                features: ["Arch-Based Rolling", "No bloatware", "Outstanding AUR access", "Optimized graphics tools"],
+                ram: 850,
+                power: "8.2W Idle",
+                specBase: "Arch Linux",
+                specGpu: "Proprietary NVIDIA / AMD Switchable",
+                specDisplay: "Wayland (Native Mutter)",
+                specPower: "TLP 1.6 + tlp-pd"
+            },
+            cachy: {
+                name: "CachyOS",
+                desc: "An aggressive, ultra-optimized rolling release base designed explicitly for gaming and core-level speed. Utilizes compiler optimizations (x86-64-v3) and specialized CPU schedulers to extract every drop of power from hardware.",
+                icon: "fa-solid fa-gamepad",
+                base: "Arch Linux (Optimized)",
+                features: ["Compiler Optimized", "Gaming GameMode enabled", "Custom core kernels", "Low-latency scheduling"],
+                ram: 900,
+                power: "8.5W Idle",
+                specBase: "CachyOS Core",
+                specGpu: "Dynamic NVIDIA DKMS Module",
+                specDisplay: "Wayland (Kwin / Mutter)",
+                specPower: "TLP (Performance Governor)"
+            },
+            popos: {
+                name: "Pop!_OS",
+                desc: "Perfect for users wanting a stable, robust daily driving operating system with out-of-the-box support for modern hybrid GPU architectures. Powered by System76, its flatpack integration and tiling management simplify multi-tasking.",
+                icon: "fa-solid fa-rocket",
+                base: "Ubuntu LTS Hybrid",
+                features: ["Out-of-the-box NVIDIA Support", "Auto-Tiling System", "Firmware update integration", "Stable base LTS"],
+                ram: 1100,
+                power: "9.5W Idle",
+                specBase: "Debian/Ubuntu",
+                specGpu: "System76 Switchable Driver",
+                specDisplay: "X11 / Cosmic Preview",
+                specPower: "system76-power Daemon"
+            },
+            mint: {
+                name: "Linux Mint",
+                desc: "The ultimate recommendation for traditional desktop paradigms and solid, absolute stability. Lightweight, straightforward to navigate, and extremely reliable, making it perfect for direct computing tasks.",
+                icon: "fa-solid fa-leaf",
+                base: "Ubuntu / Debian Stable",
+                features: ["Traditional interface", "Ultra stable build paradigm", "Low system requirements", "Huge community help"],
+                ram: 700,
+                power: "6.8W Idle",
+                specBase: "Debian/Ubuntu",
+                specGpu: "Driver Manager (NVIDIA 550+)",
+                specDisplay: "X11 (Cinnamon Classic)",
+                specPower: "UPower Integrated"
+            },
+            arch: {
+                name: "Vanilla Arch Linux",
+                desc: "The pure DIY path. Choose this if you want complete, granular control over every configuration file, package, system service, and compilation tool in your environment. Absolute freedom, zero bloat.",
+                icon: "fa-solid fa-gears",
+                base: "Pure Arch Linux",
+                features: ["Total control", "Absolute Zero Bloat", "Raw rolling release packages", "Vast custom architectures"],
+                ram: 500,
+                power: "6.5W Idle",
+                specBase: "Arch Linux Core",
+                specGpu: "Manual Kernel Driver config",
+                specDisplay: "Custom Selection",
+                specPower: "Manual systemctl power config"
+            }
+        };
+
+        // Complete step questionnaire layout
+        const STEPS_DATA = [
+            {
+                title: "Hardware Platform Selection",
+                question: "What hardware layout are you deploying this Linux installation on?",
+                key: "hardware",
+                options: [
+                    { value: "dual_gpu_laptop", label: "Dual GPU Laptop", desc: "Hybrid graphics setup requiring custom power profiles and display server orchestration.", icon: "fa-solid fa-laptop" },
+                    { value: "laptop_amd_intel", label: "Intel/AMD Only Laptop", desc: "Excellent overall compatibility, focus on maximize system battery life.", icon: "fa-solid fa-laptop-medical" },
+                    { value: "desktop", label: "Traditional Desktop PC", desc: "No complex power states or suspend configurations needed.", icon: "fa-solid fa-desktop" }
+                ]
+            },
+            {
+                title: "Primary Graphics Architecture",
+                question: "Which graphics processor drives your display outputs?",
+                key: "gpu",
+                options: [
+                    { value: "nvidia", label: "NVIDIA Dedicated GPU", desc: "Requires proprietary DKMS drivers, suspend hooks, and prime synchronization.", icon: "fa-brands fa-nvidiabrand" },
+                    { value: "amd", label: "AMD Radeon GPU", desc: "Native open-source drivers integrated directly into the Linux kernel (Mesa).", icon: "fa-solid fa-microchip" },
+                    { value: "intel", label: "Intel Integrated Graphics", desc: "Native kernel driver support, low power consumption, reliable stability.", icon: "fa-solid fa-brain" }
+                ]
+            },
+            {
+                title: "Workflow & Primary Purpose",
+                question: "What is the primary role of this operating system configuration?",
+                key: "purpose",
+                options: [
+                    { value: "gaming", label: "Gaming & Performance Focus", desc: "Optimizations for Steam, Proton, Wine, low-latency, and high refresh displays.", icon: "fa-solid fa-gamepad" },
+                    { value: "work", label: "Development & Systems Work", desc: "Docker, compilers, text editors, Git development stacks, and terminal power.", icon: "fa-solid fa-code" },
+                    { value: "daily", label: "General Daily Driving & Web", desc: "Media viewing, browser stacks, communications, stability, and sleek aesthetics.", icon: "fa-solid fa-globe" }
+                ]
+            },
+            {
+                title: "Mindset & Technical Experience",
+                question: "What is your comfort level with Linux terminal commands?",
+                key: "mindset",
+                options: [
+                    { value: "beginner", label: "Beginner: Keep it Simple", desc: "Prefer Graphical interfaces, automatic configuration, and out-of-the-box setups.", icon: "fa-solid fa-user-shield" },
+                    { value: "intermediate", label: "Intermediate: Willing to Configure", desc: "Comfortable with pacman/apt commands, making basic edits to config files.", icon: "fa-solid fa-user-gear" },
+                    { value: "advanced", label: "Advanced: Give Me Full DIY", desc: "Complete architectural control, manual partitioning, manual driver configurations.", icon: "fa-solid fa-user-ninja" }
+                ]
+            },
+            {
+                title: "Desktop Philosophy & Bloat",
+                question: "What kind of visual paradigm and desktop framework do you prefer?",
+                key: "de",
+                options: [
+                    { value: "gnome", label: "Modern & Fluid (GNOME Style)", desc: "Outstanding touchpad gesture capabilities, clean visual design, no layout clutter.", icon: "fa-brands fa-linux" },
+                    { value: "kde", label: "Powerful Customization (KDE Plasma Style)", desc: "Incredible settings depth, Windows-like paradigm, high modern hardware sync.", icon: "fa-solid fa-sliders" },
+                    { value: "light", label: "Ultra Lightweight (XFCE Style)", desc: "Minimalist resources, absolute baseline performance footprint, raw execution speed.", icon: "fa-solid fa-feather" }
+                ]
+            }
+        ];
+
+        let currentStepIndex = 0;
+        let selectedAnswers = {};
+        let resourceChartInstance = null;
+        let activeTab = 'blueprint';
+
+        // Start wizard execution
+        function startWizard() {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('wizard-screen').classList.remove('hidden');
+            renderStep();
+        }
+
+        // Render current step in wizard
+        function renderStep() {
+            const stepData = STEPS_DATA[currentStepIndex];
+            
+            // Progress indicators
+            document.getElementById('wizard-step-label').innerText = `Step ${currentStepIndex + 1} of ${STEPS_DATA.length}`;
+            document.getElementById('wizard-step-title').innerText = stepData.title;
+            const progressPct = ((currentStepIndex + 1) / STEPS_DATA.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPct}%`;
+
+            // Back button visibility
+            if (currentStepIndex > 0) {
+                document.getElementById('prev-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('prev-btn').classList.add('hidden');
+            }
+
+            // Determine if an option was previously selected
+            const previousSelection = selectedAnswers[stepData.key];
+            
+            // Setup continuous select button checking
+            let isContinueDisabled = !previousSelection;
+            if (stepData.key === 'hardware' && previousSelection === 'dual_gpu_laptop') {
+                isContinueDisabled = !selectedAnswers.integratedGpu || !selectedAnswers.discreteGpu;
+            }
+
+            const nextButton = document.getElementById('next-btn');
+            nextButton.disabled = isContinueDisabled;
+            nextButton.querySelector('span').innerText = (currentStepIndex === STEPS_DATA.length - 1) ? "Generate Recommendation" : "Continue";
+
+            // Render options grid
+            let optionsHtml = `
+                <h3 class="heading-font text-xl md:text-2xl font-bold mb-6 text-slate-100">${stepData.question}</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            `;
+
+            stepData.options.forEach(opt => {
+                const isSelected = previousSelection === opt.value;
+                optionsHtml += `
+                    <div onclick="selectOption('${stepData.key}', '${opt.value}')" class="glass-card glass-card-interactive rounded-2xl p-6 cursor-pointer flex flex-col justify-between h-56 transition-all ${isSelected ? 'selected-option' : ''}">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-2xl text-blue-400"><i class="${opt.icon}"></i></span>
+                            ${isSelected ? '<span class="w-6 h-6 rounded-full bg-blue-500/20 border border-blue-500 text-blue-400 flex items-center justify-center text-xs"><i class="fa-solid fa-check"></i></span>' : ''}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-100 leading-tight mb-2">${opt.label}</h4>
+                            <p class="text-xs text-slate-400 leading-normal">${opt.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            optionsHtml += `</div>`;
+
+            // Append Dual GPU Dropdown selectors if Selected
+            if (stepData.key === 'hardware' && previousSelection === 'dual_gpu_laptop') {
+                optionsHtml += `
+                    <div class="mt-8 p-6 bg-slate-900/40 border border-slate-800/80 rounded-2xl animate-fade-in">
+                        <h4 class="text-sm font-bold text-slate-300 mb-4 flex items-center">
+                            <i class="fa-solid fa-sliders text-blue-400 mr-2"></i> Configure Hybrid Architecture
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Integrated GPU (Low-Power Core)</label>
+                                <select onchange="selectGpu('integrated', this.value)" class="bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm">
+                                    <option value="">-- Choose iGPU --</option>
+                                    <option value="intel_igpu" ${selectedAnswers.integratedGpu === 'intel_igpu' ? 'selected' : ''}>Intel UHD / Iris Xe / Arc iGPU</option>
+                                    <option value="amd_igpu" ${selectedAnswers.integratedGpu === 'amd_igpu' ? 'selected' : ''}>AMD Radeon Vega / RDNA iGPU</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Discrete GPU (High-Performance Core)</label>
+                                <select onchange="selectGpu('discrete', this.value)" class="bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm">
+                                    <option value="">-- Choose dGPU --</option>
+                                    <option value="nvidia" ${selectedAnswers.discreteGpu === 'nvidia' ? 'selected' : ''}>NVIDIA GeForce RTX / GTX Series</option>
+                                    <option value="amd" ${selectedAnswers.discreteGpu === 'amd' ? 'selected' : ''}>AMD Radeon RX Series dGPU</option>
+                                    <option value="intel" ${selectedAnswers.discreteGpu === 'intel' ? 'selected' : ''}>Intel Arc dGPU Series</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('question-container').innerHTML = optionsHtml;
+        }
+
+        // Selection Handler
+        function selectOption(key, value) {
+            selectedAnswers[key] = value;
+            if (key === 'hardware' && value !== 'dual_gpu_laptop') {
+                delete selectedAnswers.integratedGpu;
+                delete selectedAnswers.discreteGpu;
+            }
+            renderStep();
+        }
+
+        // Custom GPU Dropdown Handler
+        function selectGpu(type, value) {
+            if (type === 'integrated') {
+                selectedAnswers.integratedGpu = value;
+            } else if (type === 'discrete') {
+                selectedAnswers.discreteGpu = value;
+                // Automatically set Step 2 Graphic processor answer to keep layout synchronized
+                selectedAnswers.gpu = value;
+            }
+            renderStep();
+        }
+
+        // Navigation Controllers
+        function nextStep() {
+            if (currentStepIndex < STEPS_DATA.length - 1) {
+                currentStepIndex++;
+                renderStep();
+            } else {
+                generateRecommendation();
+            }
+        }
+
+        function prevStep() {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                renderStep();
+            }
+        }
+
+        // Switch between optimization blueprint & dual boot helper tabs
+        function switchResultTab(tabName) {
+            activeTab = tabName;
+            const btnBlueprint = document.getElementById('tab-btn-blueprint');
+            const btnDualboot = document.getElementById('tab-btn-dualboot');
+            const contentBlueprint = document.getElementById('tab-content-blueprint');
+            const contentDualboot = document.getElementById('tab-content-dualboot');
+
+            if (tabName === 'blueprint') {
+                btnBlueprint.classList.add('border-blue-500', 'text-white');
+                btnBlueprint.classList.remove('border-transparent', 'text-slate-400');
+                btnDualboot.classList.add('border-transparent', 'text-slate-400');
+                btnDualboot.classList.remove('border-rose-500', 'text-white');
+
+                contentBlueprint.classList.remove('hidden');
+                contentDualboot.classList.add('hidden');
+            } else {
+                btnDualboot.classList.add('border-rose-500', 'text-white');
+                btnDualboot.classList.remove('border-transparent', 'text-slate-400');
+                btnBlueprint.classList.add('border-transparent', 'text-slate-400');
+                btnBlueprint.classList.remove('border-blue-500', 'text-white');
+
+                contentDualboot.classList.remove('hidden');
+                contentBlueprint.classList.add('hidden');
+                updatePartitionPlan();
+            }
+        }
+
+        // Dynamic Partition Calculation & Visualizer Renderer
+        function updatePartitionPlan() {
+            const strategy = document.getElementById('db-strategy').value;
+            const totalDiskSize = parseInt(document.getElementById('db-disk-slider').value);
+            document.getElementById('db-disk-display').innerText = `${totalDiskSize} GB`;
+
+            const barContainer = document.getElementById('partition-visualizer-bar');
+            const legendContainer = document.getElementById('partition-legend');
+            const codeContainer = document.getElementById('partition-instruction-code');
+
+            let partitions = [];
+            let bootloaderCLI = "";
+
+            if (strategy === 'dual_shared') {
+                // Shared disk setup calculations
+                const winSize = Math.round(totalDiskSize * 0.55);
+                const espSize = 1; // 1GB ESP is recommended for dual booting safely
+                const rootSize = Math.round(totalDiskSize * 0.40) - 8; // Leave room for swap
+                const swapSize = 8;
+
+                partitions = [
+                    { name: 'Windows NTFS', size: winSize, color: 'bg-blue-600/60', desc: 'Existing Windows Host Operating System OS' },
+                    { name: 'EFI ESP', size: espSize, color: 'bg-emerald-500/60', desc: 'System Boot EFI Partition (ESP / boot)' },
+                    { name: 'Linux Root', size: rootSize, color: 'bg-rose-500/60', desc: 'System root container mount (ext4 / btrfs)' },
+                    { name: 'Swap Area', size: swapSize, color: 'bg-indigo-500/60', desc: 'Linux Virtual Memory Space (Hibernation Ready)' }
+                ];
+
+                bootloaderCLI = `
+<span class="text-slate-500"># 1. Mount ESP and Linux target partitions securely</span>
+mount /dev/sdX3 /mnt
+mkdir -p /mnt/boot/efi
+mount /dev/sdX2 /mnt/boot/efi
+
+<span class="text-slate-500"># 2. Configure GRUB to probe for OS on alternative sectors</span>
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
+<span class="text-blue-400">echo</span> "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
+grub-mkconfig -o /boot/grub/grub.cfg
+                `.trim();
+
+            } else if (strategy === 'dual_separate') {
+                // Two physical disks setup calculation
+                const linuxDiskSize = totalDiskSize; 
+                const espSize = 1;
+                const rootSize = linuxDiskSize - 9;
+                const swapSize = 8;
+
+                partitions = [
+                    { name: 'EFI Boot', size: espSize, color: 'bg-emerald-500/60', desc: 'Dedicated Linux Bootloader mount' },
+                    { name: 'Linux OS System', size: rootSize, color: 'bg-rose-500/60', desc: 'Linux system storage folder (ext4/btrfs)' },
+                    { name: 'Swap Sector', size: swapSize, color: 'bg-indigo-500/60', desc: 'Virtual system state hibernation memory' }
+                ];
+
+                bootloaderCLI = `
+<span class="text-slate-500"># Completely isolated installation strategy (Super Safe!)</span>
+<span class="text-slate-500"># EFI and Bootloader partitions reside independently on Disk B.</span>
+mount /dev/sdb2 /mnt
+mkdir -p /mnt/boot
+mount /dev/sdb1 /mnt/boot
+
+<span class="text-slate-500"># Install separate standalone boot management</span>
+bootctl install --path=/boot
+<span class="text-slate-500"># Ensure BIOS priority places Disk B ahead of Disk A.</span>
+                `.trim();
+
+            } else {
+                // Wipe clean layout calculation
+                const espSize = 1;
+                const rootSize = totalDiskSize - 9;
+                const swapSize = 8;
+
+                partitions = [
+                    { name: 'EFI System (ESP)', size: espSize, color: 'bg-emerald-500/60', desc: 'Universal EFI system sector' },
+                    { name: 'Pure Linux (/)', size: rootSize, color: 'bg-rose-500/60', desc: 'Consolidated operating partition space' },
+                    { name: 'Swap Partition', size: swapSize, color: 'bg-indigo-500/60', desc: 'Performance caching swaps' }
+                ];
+
+                bootloaderCLI = `
+<span class="text-slate-500"># Automated clean layout installation setup</span>
+<span class="text-slate-500"># Create partition table gpt manually</span>
+gdisk /dev/sda
+<span class="text-slate-500"># Format target mount system filesystems</span>
+mkfs.fat -F32 /dev/sda1
+mkfs.ext4 /dev/sda2
+mkswap /dev/sda3
+swapon /dev/sda3
+                `.trim();
+            }
+
+            // Build dynamic visualization bar
+            let barHtml = "";
+            let legendHtml = "";
+            partitions.forEach(p => {
+                const percentage = (p.size / totalDiskSize) * 100;
+                barHtml += `
+                    <div class="${p.color} h-full partition-block border-r border-slate-900/40 cursor-help flex items-center justify-center text-[10px] font-bold text-white uppercase tracking-wider" style="width: ${percentage}%" title="${p.name} (${p.size} GB) - ${p.desc}">
+                        ${percentage > 12 ? `${p.size}G` : ''}
+                    </div>
+                `;
+
+                legendHtml += `
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded ${p.color} inline-block"></span>
+                        <span class="text-slate-300 font-semibold">${p.name} <span class="text-slate-500">(${p.size} GB)</span></span>
+                    </div>
+                `;
+            });
+
+            barContainer.innerHTML = barHtml;
+            legendContainer.innerHTML = legendHtml;
+            codeContainer.innerHTML = bootloaderCLI;
+        }
+
+        // Main Recommendation Logic Engine
+        function generateRecommendation() {
+            document.getElementById('wizard-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+
+            let winner = "endeavour"; // default fall-back
+            let recommendedDE = "GNOME Shell (Wayland)";
+            
+            const { hardware, gpu, purpose, mindset, de } = selectedAnswers;
+
+            // Decision Routing matrix
+            if (mindset === 'beginner') {
+                if (gpu === 'nvidia') {
+                    winner = "popos";
+                    recommendedDE = de === 'kde' ? "KDE Plasma (System76 Engine)" : "Cosmic Shell / GNOME hybrid";
+                } else {
+                    winner = "mint";
+                    recommendedDE = de === 'kde' ? "KDE Plasma (Traditional Mode)" : "Cinnamon Desktop Interface";
+                }
+            } else if (mindset === 'advanced') {
+                if (de === 'light') {
+                    winner = "arch";
+                    recommendedDE = "Minimal Window Manager (i3 / Hyprland)";
+                } else {
+                    winner = "cachy";
+                    recommendedDE = de === 'kde' ? "Optimized KDE Plasma (High-Hz Gaming)" : "Highly Optimized GNOME Wayland";
+                }
+            } else {
+                // Intermediate Matchings
+                if (purpose === 'gaming') {
+                    winner = "cachy";
+                    recommendedDE = de === 'kde' ? "KDE Plasma (Low Latency Custom)" : "GNOME Mutter Wayland Engine";
+                } else {
+                    winner = "endeavour";
+                    recommendedDE = de === 'kde' ? "KDE Plasma Workstation" : "Minimal Stock GNOME (Wayland)";
+                }
+            }
+
+            const data = DISTROS_DB[winner];
+
+            // Render Hero Stats
+            document.getElementById('recommended-distro').innerText = data.name;
+            document.getElementById('recommended-de').innerText = recommendedDE;
+            document.getElementById('recommendation-desc').innerText = data.desc;
+            document.getElementById('distro-icon-wrapper').innerHTML = `<i class="${data.icon}"></i>`;
+
+            // Spec Matrix
+            document.getElementById('spec-base').innerText = data.specBase;
+            document.getElementById('spec-gpu').innerText = gpu === 'nvidia' ? "NVIDIA Proprietary" : "Mesa Kernel Drivers";
+            document.getElementById('spec-display').innerText = de === 'kde' ? "Wayland / X11 Config" : "Wayland (Native System)";
+            document.getElementById('spec-power').innerText = hardware.includes('laptop') ? "TLP Battery Daemon" : "Standard AC power management";
+
+            // Numeric Stats
+            document.getElementById('stat-ram').innerText = `~${data.ram} MB`;
+            document.getElementById('stat-power').innerText = hardware.includes('laptop') ? (gpu === 'nvidia' ? "< 8.5W Idle" : "< 6.8W Idle") : "No power profile restrictions";
+
+            // Render Dynamic Badges
+            let badgeHtml = "";
+            data.features.forEach(feat => {
+                badgeHtml += `
+                    <span class="text-xs font-semibold text-slate-300 bg-slate-800 border border-slate-700/60 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                        <span>${feat}</span>
+                    </span>
+                `;
+            });
+            document.getElementById('match-badges').innerHTML = badgeHtml;
+
+            // Render Terminal Blueprint custom paths
+            const gpuInstallCmd = document.getElementById('terminal-gpu-command');
+            if (gpu === 'nvidia') {
+                if (winner === 'popos' || winner === 'mint') {
+                    gpuInstallCmd.innerText = `# NVIDIA drivers come pre-installed. Verify dynamic GPU toggles:\nsystem76-power graphics hybrid`;
+                } else {
+                    gpuInstallCmd.innerText = `# Install optimized hybrid graphic helpers\nyay -S envycontrol-git\nsudo envycontrol -s hybrid`;
+                }
+            } else {
+                gpuInstallCmd.innerText = `# AMD / Intel open source drivers integrated.\n# Install Mesa packages for Vulkan acceleration\nsudo pacman -S vulkan-radeon mesa`;
+            }
+
+            // Render Chart visualizations
+            renderProfileChart(data.ram, de);
+            
+            // Seed AI integration context
+            seedAIChatContext(data.name, recommendedDE, selectedAnswers);
+            
+            // Render partition layouts with dynamic state updates
+            updatePartitionPlan();
+        }
+
+        // Visual Chart.js Configurations
+        function renderProfileChart(ramValue, chosenDE) {
+            const ctx = document.getElementById('resourceProfileChart').getContext('2d');
+            
+            if (resourceChartInstance) {
+                resourceChartInstance.destroy();
+            }
+
+            // Create contextual dataset comparison for the specific DE profile selected
+            const datasetValues = [ramValue, 650, 400]; // Active, Average KDE, Window Managers
+            
+            resourceChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Selected Setup', 'KDE Plasma standard', 'Minimal Window Manager'],
+                    datasets: [{
+                        label: 'Estimated Memory (MB)',
+                        data: datasetValues,
+                        backgroundColor: ['#f43f5e', '#3b82f6', '#10b981'],
+                        borderRadius: 8,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f1526',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(255,255,255,0.08)',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#64748b', font: { size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // copy terminal blueprint snippet
+        function copyTerminalCode() {
+            const codeBlock = `sudo pacman -Syu\nsudo pacman -S tlp tlp-rd\nsudo systemctl enable --now tlp\nyay -S envycontrol-git\nsudo envycontrol -s hybrid\nsudo systemctl enable nvidia-suspend.service nvidia-resume.service`;
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = codeBlock;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            
+            // Temporary confirmation visual
+            const notifier = document.createElement("div");
+            notifier.className = "fixed bottom-5 right-5 bg-emerald-600 border border-emerald-500 text-white font-bold px-4 py-3 rounded-xl shadow-lg z-50 text-xs flex items-center space-x-2";
+            notifier.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Blueprint copied to clipboard!</span>`;
+            document.body.appendChild(notifier);
+            setTimeout(() => notifier.remove(), 2500);
+        }
+
+        function resetWizard() {
+            selectedAnswers = {};
+            currentStepIndex = 0;
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('wizard-screen').classList.remove('hidden');
+            renderStep();
+        }
+
+        // AI Integration State Properties
+        let recommendedContext = {};
+
+        function seedAIChatContext(distro, de, answers) {
+            recommendedContext = {
+                distro: distro,
+                de: de,
+                answers: answers
+            };
+            // Clear prior user messages but keep system initialization
+            document.getElementById('ai-chat-history').innerHTML = `
+                <div class="bg-slate-900/50 border border-slate-800/80 p-3.5 rounded-2xl max-w-[85%]">
+                    Welcome back! I am optimized with context for your recommended <strong>${distro}</strong> + <strong>${de}</strong> configuration. Ask me any configuration, driver setup, or partition setup questions.
+                </div>
+            `;
+        }
+
+        async function sendChatMessage() {
+            const inputEl = document.getElementById('ai-chat-input');
+            const chatHistoryEl = document.getElementById('ai-chat-history');
+            const query = inputEl.value.trim();
+            if (!query) return;
+
+            // User Chat Bubble
+            const userBubble = document.createElement('div');
+            userBubble.className = "bg-blue-600 text-white p-3.5 rounded-2xl max-w-[85%] ml-auto text-right";
+            userBubble.innerText = query;
+            chatHistoryEl.appendChild(userBubble);
+            inputEl.value = "";
+            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+
+            // Typing Indicator Bubble
+            const typingBubble = document.createElement('div');
+            typingBubble.className = "bg-slate-900/40 border border-slate-800 p-3 rounded-2xl max-w-[50px] text-center";
+            typingBubble.innerHTML = `<i class="fa-solid fa-ellipsis animate-bounce text-slate-500"></i>`;
+            chatHistoryEl.appendChild(typingBubble);
+            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+
+            try {
+                // Execute API request to Gemini Engine using canvas dynamic key insertion
+                const systemPrompt = `You are a world-class Linux Systems Architect specializing in desktop environments, disk partitioning, dual-boot bootloaders (GRUB/systemd-boot), driver configs, and gaming platforms (Proton/Wine). The user has just run a questionnaire and received the recommendation: ${recommendedContext.distro} with ${recommendedContext.de} running on a ${recommendedContext.answers.hardware} setup (GPU: ${recommendedContext.answers.gpu}). Keep your answers clean, technical, high-impact, providing precise CLI copy-paste commands, avoiding conversational fluff.`;
+                const apiKey = ""; // Left empty for automatic Canvas API Key assignment
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: query }] }],
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                typingBubble.remove();
+
+                const aiBubble = document.createElement('div');
+                aiBubble.className = "bg-slate-900 border border-slate-800 p-4 rounded-2xl max-w-[90%] whitespace-pre-wrap leading-relaxed text-xs font-mono";
+
+                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const rawText = result.candidates[0].content.parts[0].text;
+                    aiBubble.innerText = rawText;
+                } else {
+                    aiBubble.innerText = "Apologies, the compiler encountered an issue. Please try rephrasing your command-line question.";
+                }
+
+                chatHistoryEl.appendChild(aiBubble);
+                chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+
+            } catch (error) {
+                typingBubble.remove();
+                const errBubble = document.createElement('div');
+                errBubble.className = "bg-rose-950/40 border border-rose-900 text-rose-300 p-3 rounded-2xl max-w-[85%] text-xs font-mono";
+                errBubble.innerText = "Network Gateway Error: Could not resolve prompt payload with Gemini API service.";
+                chatHistoryEl.appendChild(errBubble);
+                chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+            }
+        }
+
+        function handleChatKeyDown(event) {
+            if (event.key === "Enter") {
+                sendChatMessage();
+            }
+        }
+    </script>
+</body>
+</html>
